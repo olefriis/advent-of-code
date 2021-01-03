@@ -29,7 +29,7 @@ fn run(program: &mut Vec<usize>) {
 }
 
 fn main() -> std::io::Result<()> {
-  let file = File::open("input")?;
+  let file = File::open("2/input")?;
   let lines: Vec<String> = io::BufReader::new(file).lines().map(|line| line.unwrap()).collect();
   let original_program: Vec<usize> = lines.iter()
     .flat_map(|line| line.split(',').map(|intcode_as_string| intcode_as_string.parse::<usize>().unwrap()))

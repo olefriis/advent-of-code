@@ -37,7 +37,7 @@ fn parse_wire(wire_directions: &String) -> (HashSet<Position>, HashMap<Position,
 }
 
 fn main() -> std::io::Result<()> {
-  let file = File::open("input")?;
+  let file = File::open("3/input")?;
   let lines: Vec<String> = io::BufReader::new(file).lines().map(|line| line.unwrap()).collect();
   let mut lines_iter = lines.iter();
 

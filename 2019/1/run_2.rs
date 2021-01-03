@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 
 fn main() -> std::io::Result<()> {
-  let file = File::open("input")?;
+  let file = File::open("1/input")?;
   let sum: i32 = io::BufReader::new(file).lines()
     .map(|line| line.unwrap().parse::<i32>().unwrap())
     .map(|mass| {

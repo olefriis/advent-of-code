@@ -1,7 +1,4 @@
-# Rust binaries
-run
-run_1
-run_2
-
 # Don't show the input files (or maybe we should...?)
 input
+
+/2019/target
