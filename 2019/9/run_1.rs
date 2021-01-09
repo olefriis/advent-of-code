@@ -1,9 +1,9 @@
 use std::fs::File;
 use std::io::{self, BufRead};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 struct Intcode {
-  program: Vec<i64>,
+  memory: HashMap<usize, i64>,
   instruction_pointer: usize,
   relative_base: usize,
 }
@@ -17,8 +17,13 @@ enum ParameterMode {
 
 impl Intcode {
   fn new(program: &Vec<i64>) -> Intcode {
+    let mut memory = HashMap::<usize, i64>::new();
+    for (position, m) in program.iter().enumerate() {
+      memory.insert(position, *m);
+    }
+
     Intcode {
-      program: program.clone(),
+      memory: memory,
       instruction_pointer: 0,
       relative_base: 0,
     }
@@ -27,7 +32,7 @@ impl Intcode {
   fn run(&mut self, inputs: &Vec<i64>) -> Option<i64> {
     let mut input_iter = inputs.iter();
     loop {
-      let instruction = self.program[self.instruction_pointer] as u64;
+      let instruction = self.memory[&self.instruction_pointer] as u64;
       let opcode = instruction % 100;
       match opcode {
         99 => return None,
@@ -113,25 +118,32 @@ impl Intcode {
   fn parameter(&self, parameter_number: usize) -> i64 {
     let position = self.instruction_pointer + parameter_number;
     match self.parameter_mode(parameter_number) {
-      ParameterMode::Position => self.program[self.program[position] as usize],
-      ParameterMode::Immediate => self.program[position],
-      ParameterMode::Relative => self.program[self.relative_base + (self.program[position] as usize)],
+      ParameterMode::Position => self.memory_at(self.memory[&position] as usize),
+      ParameterMode::Immediate => self.memory_at(position),
+      ParameterMode::Relative => self.memory_at(self.relative_base + (self.memory[&position] as usize)),
     }
   }
 
   fn store(&mut self, parameter_number: usize, value: i64) {
     let position = self.instruction_pointer + parameter_number;
     let destination = match self.parameter_mode(parameter_number) {
-      ParameterMode::Position => self.program[position] as usize,
+      ParameterMode::Position => self.memory_at(position) as usize,
       ParameterMode::Immediate => panic!("Immediate parameter mode not supported for destination parameters"),
       ParameterMode::Relative => self.relative_base + position,
     } as usize;
 
-    self.program[destination] = value;
+    self.memory.insert(destination, value);
+  }
+
+  fn memory_at(&self, position: usize) -> i64 {
+    match self.memory.get(&position) {
+      None => 0,
+      Some(value) => *value,
+    }
   }
 
   fn parameter_mode(&self, parameter_number: usize) -> ParameterMode {
-    let instruction = self.program[self.instruction_pointer] as usize;
+    let instruction = self.memory[&self.instruction_pointer] as usize;
     let mode_number = match parameter_number {
       1 => (instruction / 100) % 10,
       2 => (instruction / 1000) % 10,
