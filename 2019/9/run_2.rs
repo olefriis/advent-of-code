@@ -167,7 +167,7 @@ fn main() -> std::io::Result<()> {
     .collect();
 
   let mut intcode = Intcode::new(&program);
-  let initial_input = vec![1];
+  let initial_input = vec![2];
   let mut result = intcode.run(&initial_input);
   loop {
     match result {
