@@ -101,7 +101,7 @@ fn vaporize(initial_map: &Vec<Vec<Cell>>, position: &Position) -> Vec<Position> 
     let mut upper_left = visible_asteroids.iter()
       .filter(|asteroid| asteroid.x < position.x && asteroid.y <= position.y)
       .collect::<Vec<&Position>>();
-    upper_left.sort_by_key(|asteroid| OrderedFloat { f: (asteroid.y as f64 - position.y as f64) / (position.x as f64 - asteroid.x as f64) });
+    upper_left.sort_by_key(|asteroid| OrderedFloat { f: (position.y as f64 - asteroid.y as f64) / (position.x as f64 - asteroid.x as f64) });
 
     // Add all vaporized asteroids to our result, and remove them from our working map
     upper_right.iter()
