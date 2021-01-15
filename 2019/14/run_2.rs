@@ -2,6 +2,9 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::collections::{HashMap, HashSet};
 
+/*
+ * Basically the same as part 1, just using f64 instead of u32...
+ */
 fn main() -> std::io::Result<()> {
   let file = File::open("14/input")?;
   let lines: Vec<String> = io::BufReader::new(file).lines().map(|line| line.unwrap()).collect();
@@ -12,7 +15,7 @@ fn main() -> std::io::Result<()> {
   let reaction_to_fuel = take_reaction_from_set(&mut reactions, "FUEL");
   let mut required_input = HashMap::new();
   for input in reaction_to_fuel.inputs {
-    required_input.insert(input.chemical, input.quantity);
+    required_input.insert(input.chemical, input.quantity as f64);
   }
 
   while reactions.len() > 0 {
@@ -25,27 +28,26 @@ fn main() -> std::io::Result<()> {
     let reaction = take_reaction_from_set(&mut reactions, output_from_reaction_not_used_as_input.as_str());
 
     let required_quantity = match required_input.remove(&reaction.output.chemical) {
-      None => 0,
+      None => 0_f64,
       Some(quantity) => quantity,
     };
-    let mut required_reactions = 0;
-    let mut produced_quantities = 0;
-    while produced_quantities < required_quantity {
-      required_reactions += 1;
-      produced_quantities += reaction.output.quantity;
-    }
-    println!("{} of {} produces {}. required quantity is {}.", required_reactions, reaction.output.chemical, produced_quantities, required_quantity);
+    let required_reactions = required_quantity as f64 / reaction.output.quantity as f64;
+    println!("{} of {} produces {}.", required_reactions, reaction.output.chemical, required_quantity);
     for input in reaction.inputs {
       let existing_quantities = match required_input.get(&input.chemical) {
-        None => 0,
+        None => 0_f64,
         Some(&quantity) => quantity,
       };
-      required_input.insert(input.chemical, existing_quantities + required_reactions * input.quantity);
+      required_input.insert(input.chemical, existing_quantities + required_reactions * input.quantity as f64);
     }
 
     reactions = reactions.into_iter().filter(|reaction| reaction.output.chemical == reaction.output.chemical).collect();
   }
   println!("Required chemicals: {:?}", required_input);
+
+  let required_ore_per_fuel = required_input.iter().next().unwrap().1;
+  let generated_fuel = 1000000000000_f64 / required_ore_per_fuel;
+  println!("We can generate {} FUEL", generated_fuel as u64);
 
   Ok(())
 }
