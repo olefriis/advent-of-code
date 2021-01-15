@@ -11,6 +11,6 @@ a rounding error somewhere (either in my code or the official code), so my answe
 what is wrong, but judging from the output there are a few _very_ minor rounding errors, and together they probably
 make my solution give a slightly wrong answer.
 
-Rust noted:
+Rust notes:
 * I wish I could just give a predicate to HashSet, and HashSet would remove the matching elements and return them! Maybe
   this is already possible, but I couldn't find the method.
