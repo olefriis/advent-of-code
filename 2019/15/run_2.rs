@@ -1,6 +1,6 @@
 mod intcode;
 use intcode::{Intcode, read_program};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 type ShortestPaths = HashMap<Position, Position>;
 
@@ -20,33 +20,61 @@ enum Direction {
 fn main() -> std::io::Result<()> {
   let program: Vec<i64> = read_program("15/input");
 
+  let map = map_all(&program);
+  let oxygen_station_position = map.iter().find(|(_, &tile_type)| tile_type == 2).unwrap().0;
+  println!("Oxygen station found at position {:?}", oxygen_station_position);
+
+  let result = fill_all(&map, oxygen_station_position);
+  println!("Filled all in {} minutes", result);
+
+  Ok(())
+}
+
+fn fill_all(map: &HashMap<Position, i64>, starting_position: &Position) -> usize {
+  let mut mapped = HashSet::new();
+
+  let mut distance = 0;
+  let mut current_border = vec![starting_position.clone()];
+
+  while current_border.len() > 0 {
+    let mut upcoming_border = vec![];
+
+    for position in current_border.iter() {
+      for direction in 1..=4 {
+        let nearby_position = direction_from(position, &Direction::from(direction));
+        let tile_type = map.get(&nearby_position).unwrap();
+        if *tile_type != 0 && !mapped.contains(&nearby_position) {
+          upcoming_border.push(nearby_position.clone());
+          mapped.insert(nearby_position);
+        }
+      }
+    }
+
+    current_border = upcoming_border;
+    distance += 1;
+  }
+
+  distance - 1 // The initial tile is filled immediately
+}
+
+fn map_all(program: &Vec<i64>) -> HashMap<Position, i64> {
+  let mut map = HashMap::new();
   let mut shortest_paths = ShortestPaths::new();
 
   // We start at 0,0
   let mut current_border = vec![Position { x: 0, y: 0}];
   shortest_paths.insert(Position { x: 0, y: 0}, Position { x: 0, y: 0 });
 
-  let mut current_distance = 0;
-
-  loop {
-    current_distance += 1;
+  while current_border.len() > 0 {
     let mut upcoming_border = vec![];
-    if current_distance % 1000 == 0 {
-      println!("Current distance: {}", current_distance);
-    }
 
     for position in current_border.iter() {
       for (nearby_position, tile_type) in examine_nearby_tiles(&position, &shortest_paths, &program).iter() {
+        map.insert(nearby_position.clone(), *tile_type);
         if !shortest_paths.contains_key(&nearby_position) {
           if *tile_type != 0 {
             shortest_paths.insert(nearby_position.clone(), position.clone());
             upcoming_border.push(nearby_position.clone());
-          }
-          if *tile_type == 2 {
-            let path = construct_path_to(nearby_position, &shortest_paths);
-            // We found it!
-            println!("Found it at position {:?} - path is {} steps long", path[path.len()-1], path.len());
-            return Ok(());
           }
         }
       }
@@ -54,6 +82,8 @@ fn main() -> std::io::Result<()> {
 
     current_border = upcoming_border;
   }
+
+  map
 }
 
 impl Direction {
@@ -107,7 +137,7 @@ fn examine_nearby_tiles(position: &Position, shortest_paths: &ShortestPaths, pro
   nearby_tiles
 }
 
-fn direction_from(position: &Position, direction:& Direction) -> Position {
+fn direction_from(position: &Position, direction: &Direction) -> Position {
   match *direction {
     Direction::North => Position { y: position.y + 1, ..*position },
     Direction::South => Position { y: position.y - 1, ..*position },
@@ -134,6 +164,7 @@ fn move_to(destination: &Position, intcode: &mut Intcode, shortest_paths: &Short
     let input = vec![direction.to_i()];
     match intcode.run(&input) {
       Some(1) => {}, // All good
+      Some(2) => {}, // Also good
       something => panic!("Unexpected output when moving from {:?} to {:?}: {:?}. Path: {:?}", current_position, next_position, something, path),
     };
     current_position = next_position.clone();
