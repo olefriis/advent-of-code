@@ -8,6 +8,13 @@ fn main() -> std::io::Result<()> {
 
   remove_dead_ends(&mut lines);
 
+  for line in lines.iter() {
+    for c in line.iter() {
+      print!("{}", c);
+    }
+    println!("");
+  }
+
   let all_keys: Vec<&char> = lines.iter().flat_map(|line| line.iter().filter(|c| is_key(c))).collect();
 
   println!("{} keys", all_keys.len());
@@ -52,8 +59,8 @@ fn main() -> std::io::Result<()> {
 fn remove_dead_ends(lines: &mut Vec<Vec<char>>) {
   loop {
     let mut removed_dead_ends = 0;
-    for y in 1..lines.len()-2 {
-      for x in 1..lines[y].len()-2 {
+    for y in 1..lines.len()-1 {
+      for x in 1..lines[y].len()-1 {
         let mut nearby_walls = 0;
         if lines[y-1][x] == '#' {
           nearby_walls += 1;
