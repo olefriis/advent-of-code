@@ -4,16 +4,7 @@ use std::collections::{HashMap, HashSet};
 
 fn main() -> std::io::Result<()> {
   let file = File::open("18/altered_input")?;
-  let mut lines: Vec<Vec<char>> = io::BufReader::new(file).lines().map(|line| line.unwrap().chars().collect()).collect();
-
-  remove_dead_ends(&mut lines);
-
-  for line in lines.iter() {
-    for c in line.iter() {
-      print!("{}", c);
-    }
-    println!("");
-  }
+  let lines: Vec<Vec<char>> = io::BufReader::new(file).lines().map(|line| line.unwrap().chars().collect()).collect();
 
   let all_keys: Vec<&char> = lines.iter().flat_map(|line| line.iter().filter(|c| is_key(c))).collect();
 
@@ -56,37 +47,24 @@ fn main() -> std::io::Result<()> {
   }
 }
 
-fn remove_dead_ends(lines: &mut Vec<Vec<char>>) {
-  loop {
-    let mut removed_dead_ends = 0;
-    for y in 1..lines.len()-1 {
-      for x in 1..lines[y].len()-1 {
-        let mut nearby_walls = 0;
-        if lines[y-1][x] == '#' {
-          nearby_walls += 1;
-        }
-        if lines[y+1][x] == '#' {
-          nearby_walls += 1;
-        }
-        if lines[y][x-1] == '#' {
-          nearby_walls += 1;
-        }
-        if lines[y][x+1] == '#' {
-          nearby_walls += 1;
-        }
+fn reachable_keys(position: &Position, current_keys: &Vec<Key>) -> HashMap<Key, (Position, usize)> {
+  let mut border = vec![];
+  let mut investigated = HashSet::new();
+  let mut result = HashMap::new();
 
-        if lines[y][x] == '.' && nearby_walls == 3 {
-          lines[y][x] = '#';
-          removed_dead_ends += 1;
-        }
+  while border.len() > 0 {
+    let mut new_border = vec![];
+    for position in border.iter() {
+      for nearby_offset in vec![(-1, 0), (1, 0), (0, -1), (0, 1)].iter() {
+        let new_position = Position { x: (position.x as i32 + nearby_offset.0) as usize, y: (position.y as i32 + nearby_offset.1) as usize };
+
+        new_border.push(new_position);
       }
     }
-
-    println!("Removed {} dead ends", removed_dead_ends);
-    if removed_dead_ends == 0 {
-      break;
-    }
+    border = new_border;
   }
+
+  result
 }
 
 #[derive(PartialEq, Eq, Clone)]
