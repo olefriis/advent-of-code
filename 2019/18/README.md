@@ -24,4 +24,7 @@ to this:
 to avoid some walking in circles. Still, it took forever, and after 1576 iterations I had more than one million
 player objects.
 
+I also tried to remove dead ends from the map. This just allowed me to go to 1702 iterations before reacing one
+million player objects...
+
 So, new strategy...

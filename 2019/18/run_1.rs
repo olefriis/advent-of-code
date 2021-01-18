@@ -4,7 +4,9 @@ use std::collections::{HashMap, HashSet};
 
 fn main() -> std::io::Result<()> {
   let file = File::open("18/altered_input")?;
-  let lines: Vec<Vec<char>> = io::BufReader::new(file).lines().map(|line| line.unwrap().chars().collect()).collect();
+  let mut lines: Vec<Vec<char>> = io::BufReader::new(file).lines().map(|line| line.unwrap().chars().collect()).collect();
+
+  remove_dead_ends(&mut lines);
 
   let all_keys: Vec<&char> = lines.iter().flat_map(|line| line.iter().filter(|c| is_key(c))).collect();
 
@@ -44,6 +46,39 @@ fn main() -> std::io::Result<()> {
     }
 
     players = next_players;
+  }
+}
+
+fn remove_dead_ends(lines: &mut Vec<Vec<char>>) {
+  loop {
+    let mut removed_dead_ends = 0;
+    for y in 1..lines.len()-2 {
+      for x in 1..lines[y].len()-2 {
+        let mut nearby_walls = 0;
+        if lines[y-1][x] == '#' {
+          nearby_walls += 1;
+        }
+        if lines[y+1][x] == '#' {
+          nearby_walls += 1;
+        }
+        if lines[y][x-1] == '#' {
+          nearby_walls += 1;
+        }
+        if lines[y][x+1] == '#' {
+          nearby_walls += 1;
+        }
+
+        if lines[y][x] == '.' && nearby_walls == 3 {
+          lines[y][x] = '#';
+          removed_dead_ends += 1;
+        }
+      }
+    }
+
+    println!("Removed {} dead ends", removed_dead_ends);
+    if removed_dead_ends == 0 {
+      break;
+    }
   }
 }
 
