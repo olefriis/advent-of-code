@@ -28,3 +28,13 @@ I also tried to remove dead ends from the map. This just allowed me to go to 170
 million player objects...
 
 So, new strategy...
+
+Whoa, got it working, but not sure this was the simplest way to do it... For each key, I have a map with a map
+from a key set to the minimum number of moves to get to that key with the keys from the key set. Then I just iterate
+and go from each of these configurations to all other reachable keys and update the best efforts so far. And quit
+when we no more optimize this.
+
+It was HORRIBLE to write this in Rust, as I need to modify the structure I am iterating. And it takes almost 20
+seconds to run, which also means there must be a simpler way to do it.
+
+The actual output is not too nice. You need to manually find the line with the fewest moves. Sorry.
