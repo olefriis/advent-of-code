@@ -2,16 +2,29 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::collections::{HashMap, HashSet};
 
+type BestEfforts = HashMap<Vec<char>, BestEffort>;
+
+#[derive(PartialEq, Eq, Clone, Debug, Hash)]
+struct BestEffort {
+  keys: Vec<char>,
+  moves: usize,
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Hash)]
+struct Position {
+  x: usize,
+  y: usize,
+}
+
+type Map = Vec<Vec<Tile>>;
+type Key = char;
+type Tile = char;
+
 fn main() -> std::io::Result<()> {
   let file = File::open("18/input")?;
   let map: Map = io::BufReader::new(file).lines().map(|line| line.unwrap().chars().collect()).collect();
 
   let all_keys: Vec<&char> = map.iter().flat_map(|line| line.iter().filter(|c| is_key(c))).collect();
-  let all_doors: Vec<&char> = map.iter().flat_map(|line| line.iter().filter(|c| is_door(c))).collect();
-  let all_keys_cloned = all_keys.clone();
-  let final_keys: Vec<&&char> = all_keys_cloned.iter().filter(|key| !all_doors.contains(&&door_for_key(key))).collect();
-  println!("Final keys: {:?}", final_keys);
-
   println!("{} keys", all_keys.len());
 
   let mut positions = HashMap::new();
@@ -89,14 +102,6 @@ fn iterate(map: &Map, best_efforts_for_keys: HashMap<Tile, BestEfforts>, positio
   new_best_efforts_for_keys
 }
 
-type BestEfforts = HashMap<Vec<char>, BestEffort>;
-
-#[derive(PartialEq, Eq, Clone, Debug, Hash)]
-struct BestEffort {
-  keys: Vec<char>,
-  moves: usize,
-}
-
 fn reachable_keys(map: &Map, position: &Position, current_keys: &Vec<Key>) -> HashMap<Key, usize> {
   let mut border = vec![position.clone()];
   let mut investigated: HashSet<Position> = HashSet::new();
@@ -132,16 +137,6 @@ fn reachable_keys(map: &Map, position: &Position, current_keys: &Vec<Key>) -> Ha
   result
 }
 
-#[derive(PartialEq, Eq, Clone, Debug, Hash)]
-struct Position {
-  x: usize,
-  y: usize,
-}
-
-type Map = Vec<Vec<Tile>>;
-type Key = char;
-type Tile = char;
-
 fn is_key(c: &Tile) -> bool {
   c.is_ascii_lowercase()
 }
@@ -152,8 +147,4 @@ fn is_door(c: &Tile) -> bool {
 
 fn key_for_door(c: &Tile) -> Tile {
   c.to_ascii_lowercase()
-}
-
-fn door_for_key(c: &Tile) -> Tile {
-  c.to_ascii_uppercase()
 }
