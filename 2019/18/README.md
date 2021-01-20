@@ -1,5 +1,7 @@
 # Day 18
 
+## Part 1
+
 I thought about this for a day before doing my first implementation. Turned out, that was WAY too inefficient.
 The idea was to just spawn new "player objects" from existing "player objects" based on the choices available
 to each "player object". The big optimization I had was that each player would have a list of positions it has
@@ -47,3 +49,8 @@ _almost_ 10 times faster (2.3 seconds compared to about 20 seconds before).
 I think I am ready for part 2. Part 2 _seems_ pretty straightforward to me - instead of each player state having
 one position, it will have 4, and on each iteration we will try moving each of these 4 positions. We'll see how
 it turns out.
+
+## Part 2
+
+Yup! Basically changed the base data structure to go from superpositions instead of keys, got rid of all the Rust
+compiler errors, and it worked first time. Nice.
