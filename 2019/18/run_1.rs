@@ -7,11 +7,7 @@ fn main() -> std::io::Result<()> {
   let map: Map = io::BufReader::new(file).lines().map(|line| line.unwrap().chars().collect()).collect();
 
   let all_keys: Vec<&char> = map.iter().flat_map(|line| line.iter().filter(|c| is_key(c))).collect();
-  let mut all_keys_sorted = all_keys.clone();
-  all_keys_sorted.sort();
-  println!("All keys: {:?}", all_keys_sorted);
   let all_doors: Vec<&char> = map.iter().flat_map(|line| line.iter().filter(|c| is_door(c))).collect();
-  println!("All doors: {:?}", all_doors);
   let all_keys_cloned = all_keys.clone();
   let final_keys: Vec<&&char> = all_keys_cloned.iter().filter(|key| !all_doors.contains(&&door_for_key(key))).collect();
   println!("Final keys: {:?}", final_keys);
@@ -25,51 +21,35 @@ fn main() -> std::io::Result<()> {
     }
   }
 
-  let mut best_efforts_for_keys: HashMap<Tile, HashMap<Vec<Key>, BestEffort>> = HashMap::new();
-  for key in all_keys.iter() {
-    best_efforts_for_keys.insert(**key, HashMap::new());
-  }
-
   // Initially, all we do is standing at @ with no keys and have spent no moves
   let best_effort_for_starting_position = BestEffort { keys: vec![], moves: 0 };
   let mut best_efforts_for_starting_position = BestEfforts::new();
   best_efforts_for_starting_position.insert(vec![], best_effort_for_starting_position);
+
+  let mut best_efforts_for_keys: HashMap<Tile, HashMap<Vec<Key>, BestEffort>> = HashMap::new();
   best_efforts_for_keys.insert('@', best_efforts_for_starting_position);
 
-  loop {
+  // Iterate the same number of times we've got keys. For each iteration, all of our states will
+  // collect one more key, so the states that end up in the last iteration have all the keys.
+  for _ in 0..all_keys.len() {
     println!("Iterating");
-    let iteration = iterate(&map, best_efforts_for_keys, &positions);
-    best_efforts_for_keys = iteration.0;
-    let changes = iteration.1;
-
-    if changes == 0 {
-      break
-    }
+    best_efforts_for_keys = iterate(&map, best_efforts_for_keys, &positions);
   }
 
-  //println!("Best effort for z: {:?}", best_efforts_for_keys.get(&'z'));
-  for key in all_keys.iter() {
-    let best_efforts_for_key: &BestEfforts = best_efforts_for_keys.get(key).unwrap();
-    for (keys, best_effort) in best_efforts_for_key.iter() {
-      if keys.len() == all_keys.len() {
-        println!("Key: {}. Moves: {} ({:?})", key, best_effort.moves, best_effort.keys);
-      }
-    }
-  }
+  let all_successful_moves: Vec<&BestEffort> = best_efforts_for_keys.values().flat_map(|best_efforts| best_efforts.values().collect::<Vec<&BestEffort>>()).collect();
+  let best_effort = all_successful_moves.iter().min_by_key(|best_effort| best_effort.moves).unwrap();
+
+  println!("Best effort: {} moves. Picked up keys {:?}", best_effort.moves, best_effort.keys);
 
   Ok(())
 }
 
-fn iterate(map: &Map, best_efforts_for_keys: HashMap<Tile, BestEfforts>, positions: &HashMap<Key, Position>) -> (HashMap<Tile, HashMap<Vec<Key>, BestEffort>>, usize) {
-  let mut changes = 0;
-  let previous_keys_to_be_cloned: Vec<&Tile> = best_efforts_for_keys.keys().collect();
-  let previous_keys = previous_keys_to_be_cloned.clone();
+fn iterate(map: &Map, best_efforts_for_keys: HashMap<Tile, BestEfforts>, positions: &HashMap<Key, Position>) -> HashMap<Tile, HashMap<Vec<Key>, BestEffort>> {
+  let mut new_best_efforts_for_keys: HashMap<Tile, HashMap<Vec<Key>, BestEffort>> = HashMap::new();
 
-  let mut new_best_efforts_for_keys = best_efforts_for_keys.clone();
-
-  for key in previous_keys.iter() {
+  for key in best_efforts_for_keys.keys() {
     let position = positions.get(key).unwrap();
-    let best_efforts = new_best_efforts_for_keys.get(key).unwrap().clone();
+    let best_efforts = best_efforts_for_keys.get(key).unwrap();
     for keys_collected in best_efforts.keys() {
       let best_effort = best_efforts.get(keys_collected).unwrap();
 
@@ -83,25 +63,30 @@ fn iterate(map: &Map, best_efforts_for_keys: HashMap<Tile, BestEfforts>, positio
 
         let possible_best_effort = BestEffort { keys: new_keys, moves: best_effort.moves + moves };
 
-        // Find existing best effort for arriving at the key with `sorted_keys` keys
-        let mut best_efforts_for_key = new_best_efforts_for_keys.get_mut(key).unwrap();
-        match best_efforts_for_key.get(&sorted_keys) {
+        match new_best_efforts_for_keys.get_mut(key) {
           None => {
-            best_efforts_for_key.insert(sorted_keys, possible_best_effort);
-            changes += 1;
+            let mut new_best_effort_for_key = HashMap::new();
+            new_best_effort_for_key.insert(sorted_keys, possible_best_effort);
+            new_best_efforts_for_keys.insert(*key, new_best_effort_for_key);
           },
-          Some(previous_best_effort) => {
-            if previous_best_effort.moves > possible_best_effort.moves {
-              best_efforts_for_key.insert(sorted_keys, possible_best_effort);
-              changes += 1;
-            }
+          Some(best_efforts_for_key) => {
+            match best_efforts_for_key.get(&sorted_keys) {
+              None => {
+                best_efforts_for_key.insert(sorted_keys, possible_best_effort);
+              },
+              Some(previous_best_effort) => {
+                if previous_best_effort.moves > possible_best_effort.moves {
+                  best_efforts_for_key.insert(sorted_keys, possible_best_effort);
+                }
+              }
+            }    
           }
         }
       }
     }
   }
 
-  (new_best_efforts_for_keys, changes)
+  new_best_efforts_for_keys
 }
 
 type BestEfforts = HashMap<Vec<char>, BestEffort>;
@@ -155,7 +140,6 @@ struct Position {
 
 type Map = Vec<Vec<Tile>>;
 type Key = char;
-type Keys = Vec<Key>;
 type Tile = char;
 
 fn is_key(c: &Tile) -> bool {

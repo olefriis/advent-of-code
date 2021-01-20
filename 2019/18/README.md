@@ -38,3 +38,12 @@ It was HORRIBLE to write this in Rust, as I need to modify the structure I am it
 seconds to run, which also means there must be a simpler way to do it.
 
 The actual output is not too nice. You need to manually find the line with the fewest moves. Sorry.
+
+UPDATE: I realized that as we iterate through player states, it's much easier to comprehend that each player state
+will gain exactly one key in each iteration. Thus, it doesn't make sense to keep the old states in subsequent
+iterations - if some state cannot find more keys, it should "die". This simplified the code a bit and made it
+_almost_ 10 times faster (2.3 seconds compared to about 20 seconds before).
+
+I think I am ready for part 2. Part 2 _seems_ pretty straightforward to me - instead of each player state having
+one position, it will have 4, and on each iteration we will try moving each of these 4 positions. We'll see how
+it turns out.
