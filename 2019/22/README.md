@@ -176,3 +176,8 @@ UPDATE: Well, I added [run_3.rs](run_3.rs) which does exactly that. But interest
 `deal with increment 53487514281045`, and 53487514281045's prime factors are 3, 5, 13, and 274294945031.
 Needless to say, 274294945031 is a bit too big for the methodology above, so, well, it just won't work.
 Interesting! So I'm not so sorry I spent time on dealing with 'deal into new stack' after all.
+
+UPDATE 2: Now I started looking at other approaches to this whole challenge. Looking at the [super
+impressive implementation from sophiebits](https://github.com/sophiebits/adventofcode/blob/main/2019/day22.py),
+it's clear that I should have _started_ by reversing the original list and _then_ done the reduction,
+as we would then not have to find primes etc. Oh well.
