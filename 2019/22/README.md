@@ -171,3 +171,8 @@ deal with increment deck_size - 1
 
 Maybe one day I will get back to this exercise and simplify this. But on the other hand, I am also a little
 proud that I made the other thing work. It was a BIG DEAL (heh).
+
+UPDATE: Well, I added [run_3.rs](run_3.rs) which does exactly that. But interestingly, it ends up with a
+`deal with increment 53487514281045`, and 53487514281045's prime factors are 3, 5, 13, and 274294945031.
+Needless to say, 274294945031 is a bit too big for the methodology above, so, well, it just won't work.
+Interesting! So I'm not so sorry I spent time on dealing with 'deal into new stack' after all.

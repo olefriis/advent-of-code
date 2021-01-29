@@ -183,3 +183,7 @@ path = "22/run_1.rs"
 [[bin]]
 name = "22-2"
 path = "22/run_2.rs"
+
+[[bin]]
+name = "22-3"
+path = "22/run_3.rs"
