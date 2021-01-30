@@ -181,3 +181,6 @@ UPDATE 2: Now I started looking at other approaches to this whole challenge. Loo
 impressive implementation from sophiebits](https://github.com/sophiebits/adventofcode/blob/main/2019/day22.py),
 it's clear that I should have _started_ by reversing the original list and _then_ done the reduction,
 as we would then not have to find primes etc. Oh well.
+
+UPDATE 3: Changed [run_3.rs](run_3.rs) to start by reversing the commands, and it just flies! (And gives
+the correct output). Awesome! Now I'm finally ready to move on to day 23...

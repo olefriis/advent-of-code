@@ -18,7 +18,11 @@ fn main() -> std::io::Result<()> {
   let iterations: u128 = 101741582076661;
 
   let file = File::open("22/input")?;
-  let commands: Vec<Command> = io::BufReader::new(file).lines().map(|line| line.unwrap()).flat_map(|line| {
+  let mut lines: Vec<String> = io::BufReader::new(file).lines().map(|line| line.unwrap()).collect();
+
+  // Start by reversing all commands
+  lines.reverse();
+  let commands: Vec<Command> = lines.iter().flat_map(|line| {
     if line.starts_with("deal into new stack") {
       vec![
         Command { technique: Technique::DealWithIncrement, argument: deck_size - 1 },
@@ -27,12 +31,13 @@ fn main() -> std::io::Result<()> {
     } else if line.starts_with("cut ") {
       let cut_at: u128 = (line[4..].parse::<i64>().unwrap() + deck_size as i64) as u128 % deck_size;
       vec![
-        Command { technique: Technique::Cut, argument: cut_at },
+        Command { technique: Technique::Cut, argument: deck_size - cut_at },
       ]
     } else if line.starts_with("deal with increment ") {
       let increment: u128 = line[20..].parse().unwrap();
+      let reverse_increment = find_reverse_increment(increment, deck_size);
       vec![
-        Command { technique: Technique::DealWithIncrement, argument: increment },
+        Command { technique: Technique::DealWithIncrement, argument: reverse_increment },
       ]
     } else {
       panic!("Unknown command: '{}'", line)
@@ -69,25 +74,6 @@ fn main() -> std::io::Result<()> {
 
 fn execute(commands: &Vec<Command>, deck_size: u128) -> u128 {
   let mut position = 2020;
-  let mut reversed_commands = commands.clone();
-  reversed_commands.reverse();
-  for command in reversed_commands.iter() {
-    match command.technique {
-      Technique::Cut => {
-        position = (deck_size + position + command.argument) % deck_size;
-      },
-      Technique::DealWithIncrement => {
-        let primes_for_increments = split_into_primes(command.argument);
-      
-        for prime in primes_for_increments {
-          let reverse_increment = find_reverse_increment(prime, deck_size);
-          position = (position * reverse_increment) % deck_size;
-        }
-      }
-    }
-  }
-
-  let result = position;
 
   // Check that we can go forward again
   for command in commands.iter() {
@@ -100,11 +86,8 @@ fn execute(commands: &Vec<Command>, deck_size: u128) -> u128 {
       },
     };
   }
-  if position != 2020 {
-    panic!("We did not get back to 2020, but {}", position);
-  }
 
-  result
+  position
 }
 
 fn find_reverse_increment(original_increment: u128, deck_size: u128) -> u128 {
@@ -125,24 +108,6 @@ fn find_reverse_increment(original_increment: u128, deck_size: u128) -> u128 {
       return original_position
     }
   }
-}
-
-// Very ineffective, but also very straightforward
-fn split_into_primes(number: u128) -> Vec<u128> {
-  let mut n = number;
-  let mut result = vec![];
-  let mut current_try = 2;
-  while n > 1 {
-    if n % current_try == 0 {
-      result.push(current_try);
-      n /= current_try;
-    } else {
-      current_try += 1;
-    }
-  }
-
-  println!("{} split into primes: {:?}", number, result);
-  result
 }
 
 fn reduce(commands: &Vec<Command>, deck_size: u128) -> Vec<Command> {
