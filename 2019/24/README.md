@@ -1,0 +1,3 @@
+# Day 24
+
+Easy first part. Haven't read part 2 yet...
