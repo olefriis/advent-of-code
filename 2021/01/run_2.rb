@@ -1,15 +1,3 @@
-lines = File.readlines('input')
-
-windows = []
-for i in 0...lines.length
-  windows << lines[i].to_i + lines[i+1].to_i + lines[i+2].to_i
-end
-
-previous_depth = nil
-larger = 0
-for line in windows
-  larger += 1 if previous_depth and line.to_i > previous_depth
-  previous_depth = line.to_i
-end
-
-puts larger
+lines = File.readlines('input').map(&:to_i)
+windows = lines.each_cons(3).map(&:sum)
+puts windows.each_cons(2).count { |a, b| a < b }
