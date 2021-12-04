@@ -1,17 +1,24 @@
-require 'set'
-require 'pry'
-
 lines = File.readlines('input').map(&:chomp)
 
 numbers = lines[0].split(',').map(&:to_i)
 
-Board = Struct.new(:numbers, :rows, :columns)
+Board = Struct.new(:numbers, :rows_and_columns) do
+  def draw(number)
+    numbers.delete(number)
+    rows_and_columns.each do |line|
+      line.delete(number)
+    end
+  end
 
-def add_board(boards, board)
-  numbers = board.flatten
-  rows = board
-  columns = board.transpose
-  boards << Board.new(numbers, rows, columns)
+  def bingo?
+    rows_and_columns.any?(&:empty?)
+  end
+end
+
+def add_board(boards, lines)
+  numbers = lines.flatten
+  rows_and_columns = lines + lines.transpose
+  boards << Board.new(numbers, rows_and_columns)
 end
 
 boards = []
@@ -30,14 +37,8 @@ numbers.each do |number|
   puts "Drawing #{number}"
 
   boards.each do |board|
-    board.numbers.delete(number)
-    board.rows.each do |row|
-      row.delete(number)
-    end
-    board.columns.each do |column|
-      column.delete(number)
-    end
-    if board.rows.any? {|row| row.count == 0} || board.columns.any? {|column| column.count == 0}
+    board.draw(number)
+    if board.bingo?
       puts board.numbers.sum * number
       exit
     end
