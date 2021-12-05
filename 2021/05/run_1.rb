@@ -28,4 +28,4 @@ segments.each do |segment|
   end
 end
 
-puts area.filter { |_, v| v > 1 }.length
+puts area.count { |_, v| v > 1 }
