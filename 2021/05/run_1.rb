@@ -11,21 +11,19 @@ end.select do |segment|
   segment[0].x == segment[1].x || segment[0].y == segment[1].y
 end
 
-area = {}
+area = Hash.new(0)
 segments.each do |segment|
   if segment[0].x == segment[1].x
     miny, maxy = [segment[0].y, segment[1].y].minmax
     (miny..maxy).each do |y|
       x = segment[0].x
-      p = Coord.new(x, y)
-      area[p] = (area[p] || 0) + 1
+      area[Coord.new(x, y)] += 1
     end
   else
     minx, maxx = [segment[0].x, segment[1].x].minmax
     (minx..maxx).each do |x|
       y = segment[0].y
-      p = Coord.new(x, y)
-      area[p] = (area[p] || 0) + 1
+      area[Coord.new(x, y)] += 1
     end
   end
 end

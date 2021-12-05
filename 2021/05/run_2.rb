@@ -19,14 +19,14 @@ def sign(n)
   end
 end
 
-area = {}
+area = Hash.new(0)
 segments.each do |segment|
   inc_x = sign(segment[1].x - segment[0].x)
   inc_y = sign(segment[1].y - segment[0].y)
 
   p = segment[0]
   loop do
-    area[p] = (area[p] || 0) + 1
+    area[p] += 1
     break if p == segment[1]
     p = Coord.new(p.x + inc_x, p.y + inc_y)
   end
