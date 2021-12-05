@@ -17,21 +17,17 @@ segments.each do |segment|
     miny, maxy = [segment[0].y, segment[1].y].minmax
     (miny..maxy).each do |y|
       x = segment[0].x
-      area[Coord.new(x, y)] ||= 0
-      area[Coord.new(x, y)] += 1
+      p = Coord.new(x, y)
+      area[p] = (area[p] || 0) + 1
     end
   else
     minx, maxx = [segment[0].x, segment[1].x].minmax
     (minx..maxx).each do |x|
       y = segment[0].y
-      area[Coord.new(x, y)] ||= 0
-      area[Coord.new(x, y)] += 1
+      p = Coord.new(x, y)
+      area[p] = (area[p] || 0) + 1
     end
   end
 end
 
-result = 0
-area.each do |coord, count|
-  result += 1 if count > 1
-end
-puts result
+puts area.filter { |_, v| v > 1 }.length
