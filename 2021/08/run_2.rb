@@ -39,11 +39,7 @@ def determine_mapping(line)
 
   # 4 and 9 have bcdf in common
   nine = six_connection_digits.find { |digit| (four & digit).length == 4 }
-  six_connection_digits.delete(nine)
-
-  # Remaining with 6 connections:
-  # 0: abc efg
-  zero = six_connection_digits.find { |digit| (six & digit).length == 5 }
+  zero = six_connection_digits.find { |digit| (four & digit).length != 4 }
 
   {
     zero.join('') => '0',
