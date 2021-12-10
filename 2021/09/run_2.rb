@@ -54,6 +54,4 @@ low_points = []
 end
 
 basins = low_points.map {|point| points_in_basin(lines, point)}
-basins = basins.sort_by {|basin| -basin.length}
-
-puts basins[0].length * basins[1].length * basins[2].length
+puts basins.map(&:length).sort.last(3).inject(&:*)
