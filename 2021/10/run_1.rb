@@ -1,45 +1,22 @@
 lines = File.readlines('input').map(&:strip)
-require 'pry'
-def score(line)
-  puts line
-  stack = []
-  reverse = {
-    ')' => '(',
-    '}' => '{',
-    ']' => '[',
-    '>' => '<'
-  }
 
-  scores = {
-    ')' => 3,
-    ']' => 57,
-    '}' => 1197,
-    '>' => 25137
-  }
+def score(line)
+  stack = []
+  reverse = { ')' => '(', '}' => '{', ']' => '[', '>' => '<' }
+  scores = { ')' => 3, ']' => 57, '}' => 1197, '>' => 25137 }
 
   line.split('').each do |char|
     if ['(', '{', '[', '<'].include?(char)
-      #puts "Pushing #{char}"
       stack.push(char)
     elsif [')', '}', ']', '>'].include?(char)
-      #puts "Popping #{char}"
-      #puts "Last: #{stack.last}. Reverse: #{reverse[char]}"
-      if stack.last != reverse[char]
-        #puts 'Wrong #{char}'
-        return scores[char]
-      end
-
-      #puts 'Match'
+      return scores[char] if stack.last != reverse[char]
       stack.pop
     end
   end
-  #puts 'Fine'
-  return 0
+
+  0
 end
 
-result = lines.map do |line|
-  puts score(line)
-  score(line)
-end
+result = lines.map { |line| score(line) }.sum
 
-puts result.sum
+puts result
