@@ -8,17 +8,13 @@ def print_grid(grid)
 end
 
 def neighbours(grid, position)
-  result = []
   [[-1, -1], [0, -1], [1, -1],
    [-1,  0],          [1,  0],
-   [-1,  1], [0,  1], [1,  1]].each do |dx, dy|
-    pos = Pos.new(position.x + dx, position.y + dy)
-    result << pos if pos.y >= 0 && pos.y < grid.size && pos.x >= 0 && pos.x < grid[pos.y].size
-  end
-  result
+   [-1,  1], [0,  1], [1,  1]]
+    .map { |dx, dy| Pos.new(position.x + dx, position.y + dy) }
+    .filter { |pos| pos.y >= 0 && pos.y < grid.size && pos.x >= 0 && pos.x < grid[0].size }
 end
 
-@total_flashes = 0
 
 def iterate(grid)
   has_flashed = Set.new
@@ -34,7 +30,6 @@ def iterate(grid)
     new_flashing = []
     flashing.each do |pos|
       if !has_flashed.include?(pos)
-        @total_flashes += 1
         has_flashed << pos
         neighbours(grid, pos).each do |neighbour|
           grid[neighbour.y][neighbour.x] += 1
@@ -55,17 +50,11 @@ def iterate(grid)
   end
 end
 
-print_grid(grid)
-
 1000.times do |i|
   iterate(grid)
 
-  if grid.all? { |row| row.all? { |cell| cell == 0 } }
+  if grid.map(&:sum).sum == 0
     puts "After #{i+1} iterations, the grid is all zeros"
     exit 0
   end
-  #puts "\nAfter step #{i+1}"
-  #print_grid(grid)
 end
-
-puts @total_flashes

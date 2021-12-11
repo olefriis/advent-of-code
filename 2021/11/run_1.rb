@@ -3,22 +3,13 @@ grid = File.readlines('input').map(&:strip).map { |line| line.split('').map(&:to
 
 Pos = Struct.new(:x, :y)
 
-def print_grid(grid)
-  puts grid.map { |row| row.join('') }.join("\n")
-end
-
 def neighbours(grid, position)
-  result = []
   [[-1, -1], [0, -1], [1, -1],
    [-1,  0],          [1,  0],
-   [-1,  1], [0,  1], [1,  1]].each do |dx, dy|
-    pos = Pos.new(position.x + dx, position.y + dy)
-    result << pos if pos.y >= 0 && pos.y < grid.size && pos.x >= 0 && pos.x < grid[pos.y].size
-  end
-  result
+   [-1,  1], [0,  1], [1,  1]]
+    .map { |dx, dy| Pos.new(position.x + dx, position.y + dy) }
+    .filter { |pos| pos.y >= 0 && pos.y < grid.size && pos.x >= 0 && pos.x < grid[0].size }
 end
-
-@total_flashes = 0
 
 def iterate(grid)
   has_flashed = Set.new
@@ -55,12 +46,6 @@ def iterate(grid)
   end
 end
 
-print_grid(grid)
-
-100.times do |i|
-  iterate(grid)
-  #puts "\nAfter step #{i+1}"
-  #print_grid(grid)
-end
-
+@total_flashes = 0
+100.times { |i| iterate(grid) }
 puts @total_flashes
