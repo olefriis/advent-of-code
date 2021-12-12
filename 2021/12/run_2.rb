@@ -7,14 +7,17 @@ File.readlines('input').map(&:strip).each do |line|
   EDGES[end_] << start unless start == 'start'
 end
 
-def lowercase?(s)
-  s.downcase == s
+# Add String#is_lower?
+class String
+  def is_lower?
+    self.downcase == self
+  end
 end
 
 def paths_with_revisit(node, path)
   return 1 if node == 'end'
 
-  can_continue = !lowercase?(node) || !path.include?(node) || path.none? { |n| lowercase?(n) && path.count(n) >= 2 }
+  can_continue = !node.is_lower? || !path.include?(node) || path.none? { |n| n.is_lower? && path.count(n) >= 2 }
   return 0 unless can_continue
 
   path.push(node)
