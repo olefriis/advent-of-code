@@ -12,25 +12,22 @@ def neighbours(grid, position)
 end
 
 def iterate(grid)
-  has_flashed = Set.new
-  flashing = []
-  (0...(grid.size)).each do |y|
-    (0...(grid[y].size)).each do |x|
+  has_flashed, flashing = Set.new, Set.new
+  (0...grid.size).each do |y|
+    (0...grid[y].size).each do |x|
       grid[y][x] += 1
       flashing << Pos.new(x, y) if grid[y][x] > 9
     end
   end
 
   while flashing.length > 0
-    new_flashing = []
-    flashing.each do |pos|
-      if !has_flashed.include?(pos)
-        @total_flashes += 1
-        has_flashed << pos
-        neighbours(grid, pos).each do |neighbour|
-          grid[neighbour.y][neighbour.x] += 1
-          new_flashing << neighbour if grid[neighbour.y][neighbour.x] > 9 && !has_flashed.include?(neighbour)
-        end
+    new_flashing = Set.new
+    (flashing - has_flashed).each do |pos|
+      @total_flashes += 1
+      has_flashed << pos
+      neighbours(grid, pos).each do |neighbour|
+        grid[neighbour.y][neighbour.x] += 1
+        new_flashing << neighbour if grid[neighbour.y][neighbour.x] > 9 && !has_flashed.include?(neighbour)
       end
     end
 

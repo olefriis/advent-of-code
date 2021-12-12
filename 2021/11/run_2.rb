@@ -33,7 +33,7 @@ def iterate(grid)
         has_flashed << pos
         neighbours(grid, pos).each do |neighbour|
           grid[neighbour.y][neighbour.x] += 1
-          new_flashing << neighbour if grid[neighbour.y][neighbour.x] > 9 && !has_flashed.include?(neighbour)
+          new_flashing << neighbour if grid[neighbour.y][neighbour.x] > 9
         end
       end
     end
@@ -54,7 +54,9 @@ end
   iterate(grid)
 
   if grid.map(&:sum).sum == 0
-    puts "After #{i+1} iterations, the grid is all zeros"
+    puts i+1
     exit 0
   end
 end
+
+puts 'Did not find any syncrhonous flashing'
