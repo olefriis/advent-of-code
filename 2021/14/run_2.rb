@@ -1,45 +1,26 @@
 lines = File.readlines('input').map(&:strip)
 
 template = lines[0]
-RULES = {}
-lines[2..-1].each do |line|
-  first, second = line.split(' -> ')
-  RULES[first] = second
-end
+rules = lines[2..-1].map { |line| line.split(' -> ') }.to_h
 
-pairs = {}
-for i in 0...(template.length - 1)
-  pair = template[i..(i + 1)]
-  pairs[pair] = 1 + (pairs[pair] || 0)
-end
-
-40.times do |round|
-  new_pairs = {}
-  pairs.keys.each do |pair|
-    to_insert = RULES[pair]
+pairs = (0...(template.length - 1)).map { |i| template[i..(i + 1)] }.tally
+40.times do
+  new_pairs = Hash.new { |h, k| h[k] = 0 }
+  pairs.each do |pair, count|
+    to_insert = rules[pair]
     if to_insert
-      pair_1 = "#{pair[0]}#{to_insert}"
-      pair_2 = "#{to_insert}#{pair[1]}"
-      new_pairs[pair_1] = pairs[pair] + (new_pairs[pair_1] || 0)
-      new_pairs[pair_2] = pairs[pair] + (new_pairs[pair_2] || 0)
+      new_pairs["#{pair[0]}#{to_insert}"] += count
+      new_pairs["#{to_insert}#{pair[1]}"] += count
     else
-      new_pairs[pair] = pairs[pair] + (new_pairs[pair] || 0)
+      new_pairs[pair] += count
     end
   end
   pairs = new_pairs
 end
 
-char_counts = {}
-pairs.keys.each do |pair|
-  char_1 = pair[0]
-  char_counts[char_1] = (char_counts[char_1] || 0) + pairs[pair]
-end
+char_counts = Hash.new { |h, k| h[k] = 0 }
+pairs.each { |pair, count| char_counts[pair[0]] += count }
 char_counts[template[-1]] += 1
 
-min_char = char_counts.keys.min_by { |c| char_counts[c] }
-max_char = char_counts.keys.max_by { |c| char_counts[c] }
-
-number_of_min_chars = char_counts[min_char]
-number_of_max_chars = char_counts[max_char]
-
-puts (number_of_max_chars - number_of_min_chars)
+min_char_count, max_char_count = char_counts.values.minmax
+puts (max_char_count - min_char_count)
