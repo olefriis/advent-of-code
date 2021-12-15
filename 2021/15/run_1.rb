@@ -20,9 +20,7 @@ def visit(pos, risk, grid, visited, edge)
   end
 end
 
-edge = {
-  Pos.new(0, 0) => 0
-}
+edge = { Pos.new(0, 0) => 0 }
 
 while edge.length > 0
   edge_to_take = edge.keys.min_by { |pos| edge[pos] }

@@ -1,5 +1,49 @@
 original_grid = File.readlines('input').map { |line| line.strip.split('').map(&:to_i) }
 
+
+# Weird kind of priority queue.
+# It only makes sense when the priority grows all the time (which it does with Dijkstra's algorithm), and it is only
+# performant when the difference between the max and min priority is limited (is is at most 9 in this exercise). This
+# cuts the runtime of this solution from 80s to 2.5s.
+class HalfArsedPriorityQueue
+  def initialize
+    @base_value = 0
+    @keys_to_values = {}
+    @values_to_keys = []
+  end
+
+  def put(key, value)
+    raise "Hey, you're holding it wrong! Minimum value from now on is #{@base_value}, you tried with #{value}" if value < @base_value
+
+    existing_value = @keys_to_values[key]
+    if existing_value
+      return if existing_value < value
+      @values_to_keys[existing_value - @base_value].delete(key)
+    end
+
+    @keys_to_values[key] = value
+    @values_to_keys[value - @base_value] ||= []
+    @values_to_keys[value - @base_value].push(key)
+  end
+
+  def pull
+    return [nil, nil] if @keys_to_values.empty?
+
+    while !@values_to_keys.empty? && (@values_to_keys[0].nil? || @values_to_keys[0].empty?)
+      @values_to_keys.shift
+      @base_value += 1
+    end
+
+    return_key = @values_to_keys[0].pop
+    @keys_to_values.delete(return_key)
+    [return_key, @base_value]
+  end
+
+  def empty?
+    @keys_to_values.empty?
+  end
+end
+
 grid = []
 5.times do |repeat_y|
   original_grid.length.times do |y|
@@ -33,20 +77,16 @@ def visit(pos, risk, grid, visited, edge)
   end
 
   neighbours.each do |neighbour|
-    neighbour_risk = risk + grid[neighbour.y][neighbour.x]
-    edge[neighbour] = neighbour_risk if !edge[neighbour] || edge[neighbour] > neighbour_risk
+    edge.put(neighbour, risk + grid[neighbour.y][neighbour.x])
   end
 end
 
-edge = {
-  Pos.new(0, 0) => 0
-}
+edge = HalfArsedPriorityQueue.new
+edge.put(Pos.new(0, 0), 0)
 
-while edge.length > 0
-  edge_to_take = edge.keys.min_by { |pos| edge[pos] }
-
-  visit(edge_to_take, edge[edge_to_take], grid, visited, edge)
-  edge.delete(edge_to_take)
+while !edge.empty?
+  pos, risk = edge.pull
+  visit(pos, risk, grid, visited, edge)
 end
 
 puts visited[Pos.new(grid[0].length - 1, grid.length - 1)]
