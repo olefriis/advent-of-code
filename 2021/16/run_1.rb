@@ -18,21 +18,18 @@ mapping = {
   'E' => '1110',
   'F' => '1111'
 }
-@bits = chars.flat_map { |c| mapping[c] }.join('')
+@bits = chars.map { |c| mapping[c] }.join('')
 
 Packet = Struct.new(:type, :version, :ending_position, :value)
 
 @version_number_sum = 0
 def parse(position)
-  puts "Parsing from #{position}: #{@bits[position..-1]}"
   version_bits = @bits[position...(position+3)]
   version = version_bits.to_i(2)
   @version_number_sum += version
   position += 3
   packet_type_id = @bits[position...(position+3)]
   position += 3
-  puts version
-  puts packet_type_id
   if packet_type_id == '100'
     literal_value_bits = ''
     loop do
@@ -49,13 +46,11 @@ def parse(position)
     position += 1
     if length_type_id == '0'
       sub_packets_length_bits = @bits[position...(position+15)]
-      puts "Sub packets length bits: #{sub_packets_length_bits}"
       sub_packet_length = sub_packets_length_bits.to_i(2)
       position += 15
       start_position_of_sub_packets = position
       sub_packets = []
       loop do
-        puts "Parsing sub-packet at position #{position}: #{@bits[position..-1]}"
         sub_packet = parse(position)
         sub_packets << sub_packet
         position = sub_packet.ending_position
@@ -64,7 +59,6 @@ def parse(position)
       Packet.new('operator', version, position, sub_packets)
     else
       number_of_sub_packets_bits = @bits[position...(position+11)]
-      puts "Number of sub packets bits: #{sub_packets_length_bits}"
       number_of_sub_packets = number_of_sub_packets_bits.to_i(2)
       position += 11
       sub_packets = []
@@ -78,6 +72,5 @@ def parse(position)
   end
 end
 
-puts(parse 0)
-
+parse 0
 puts @version_number_sum
