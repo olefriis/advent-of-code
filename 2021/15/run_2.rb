@@ -27,9 +27,9 @@ class HalfArsedPriorityQueue
   end
 
   def pull
-    return [nil, nil] if @keys_to_values.empty?
+    raise "It's empty" if empty?
 
-    while !@values_to_keys.empty? && (@values_to_keys[0].nil? || @values_to_keys[0].empty?)
+    while @values_to_keys[0].nil? || @values_to_keys[0].empty?
       @values_to_keys.shift
       @base_value += 1
     end
