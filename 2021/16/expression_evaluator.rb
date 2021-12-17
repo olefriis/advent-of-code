@@ -1,5 +1,30 @@
 class Evaluator
-  Packet = Struct.new(:type, :version, :ending_position, :value)
+  Packet = Struct.new(:type, :version, :sub_packets, :value) do
+    def evaluate
+      values = sub_packets.map(&:evaluate)
+
+      case type
+      when 0 # Sum
+        values.inject(&:+)
+      when 1 # Product
+        values.inject(&:*)
+      when 2 # Minimum
+        values.min
+      when 3 # Maximum
+        values.max
+      when 4 # Literal
+        value
+      when 5 # Greater than
+        values[0] > values[1] ? 1 : 0
+      when 6 # Less than
+        values[0] < values[1] ? 1 : 0
+      when 7 # Equal
+        values[0] == values[1] ? 1 : 0
+      else
+        raise "Unknown node type: #{node.type}"
+      end
+    end
+  end
 
   def initialize(input)
     mapping = {
@@ -21,84 +46,54 @@ class Evaluator
       'F' => '1111'
     }
     @bits = input.split('').map { |c| mapping[c] }.join('')
-    @root_node = parse(0)
+    @position = 0
+    @root_node = parse
   end
 
   def evaluate
-    execute(@root_node)
+    @root_node.evaluate
   end
 
-  def parse(position)
-    version = @bits[position...(position+3)].to_i(2)
-    position += 3
-    packet_type = @bits[position...(position+3)].to_i(2)
-    position += 3
+  private
+  def parse
+    version = consume(3).to_i(2)
+    packet_type = consume(3).to_i(2)
     if packet_type == 4
       literal_value_bits = ''
       loop do
-        group = @bits[position...(position+5)]
-        position += 5
-        group_starts_with = group[0]
+        group = consume(5)
         literal_value_bits += group[1..-1]
-        break if group_starts_with == '0'
+        break if group[0] == '0'
       end
       value = literal_value_bits.to_i(2)
-      Packet.new(packet_type, version, position, value)
+      Packet.new(packet_type, version, [], value)
     else
-      length_type_id = @bits[position...(position+1)]
-      position += 1
+      length_type_id = consume(1)
       if length_type_id == '0'
-        sub_packets_length = @bits[position...(position+15)].to_i(2)
-        position += 15
-        start_position_of_sub_packets = position
+        sub_packets_length = consume(15).to_i(2)
+        start_position_of_sub_packets = @position
         sub_packets = []
-        while position < start_position_of_sub_packets + sub_packets_length
-          sub_packet = parse(position)
+        while @position < start_position_of_sub_packets + sub_packets_length
+          sub_packet = parse
           sub_packets << sub_packet
-          position = sub_packet.ending_position
         end
-        Packet.new(packet_type, version, position, sub_packets)
+        Packet.new(packet_type, version, sub_packets, nil)
       else
-        number_of_sub_packets = @bits[position...(position+11)].to_i(2)
-        position += 11
+        number_of_sub_packets = consume(11).to_i(2)
         sub_packets = []
         number_of_sub_packets.times do
-          sub_packet = parse(position)
+          sub_packet = parse
           sub_packets << sub_packet
-          position = sub_packet.ending_position
         end
-        Packet.new(packet_type, version, position, sub_packets)
+        Packet.new(packet_type, version, sub_packets, nil)
       end
     end
   end
 
-  def execute(node)
-    case node.type
-    when 0 # Sum
-      node.value.map { |sub_packet| execute(sub_packet) }.inject(&:+)
-    when 1 # Product
-      node.value.map { |sub_packet| execute(sub_packet) }.inject(&:*)
-    when 2 # Minimum
-      node.value.map { |sub_packet| execute(sub_packet) }.min
-    when 3 # Maximum
-      node.value.map { |sub_packet| execute(sub_packet) }.max
-    when 4 # Literal
-      node.value
-    when 5 # Greater than
-      value_1 = execute(node.value[0])
-      value_2 = execute(node.value[1])
-      value_1 > value_2 ? 1 : 0
-    when 6 # Less than
-      value_1 = execute(node.value[0])
-      value_2 = execute(node.value[1])
-      value_1 < value_2 ? 1 : 0
-    when 7 # Equal
-      value_1 = execute(node.value[0])
-      value_2 = execute(node.value[1])
-      value_1 == value_2 ? 1 : 0
-    else
-      raise "Unknown node type: #{node.type}"
-    end
+  def consume(length)
+    result = @bits[@position...@position+length]
+    @position += length
+    result
   end
 end
 
