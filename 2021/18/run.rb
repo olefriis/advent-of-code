@@ -17,9 +17,9 @@ def explode(number)
       level -= 1
     elsif level == 5
       # Gotta explode
-      number1, number2 = token, number[i+2] # Skip the ','
-      4.times { number.delete_at(i) } # Delete '[number1,number2]' except one token
-      number[i-1] = 0
+      number1, number2 = token, number[i+2]
+      number[i-1] = 0 # Replace the '[' with 0
+      4.times { number.delete_at(i) } # ...and delete 'number1,number2]'
       (i-2).downto(0) do |j|
         if number[j].is_a?(Integer)
           number[j] += number1
@@ -44,10 +44,7 @@ def split(number)
     if token.is_a?(Integer) && token > 9
       half_rounded_down = token/2
       number[i] = '['
-      number.insert(i+1, half_rounded_down)
-      number.insert(i+2, ',')
-      number.insert(i+3, token - half_rounded_down)
-      number.insert(i+4, ']')
+      number.insert(i+1, half_rounded_down, ',', token - half_rounded_down, ']')
       return true
     end
   end
