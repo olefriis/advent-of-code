@@ -1,15 +1,17 @@
-def recurse_magnitude(numbers)
-  if numbers.is_a?(Integer)
-    numbers
-  else
-    3*recurse_magnitude(numbers[0]) + 2*recurse_magnitude(numbers[1])
+def magnitude(number)
+  keep_going = true
+  while keep_going
+    keep_going = false
+    (0...number.length).each do |i|
+      if number[i] == '[' && number[i+1].is_a?(Integer) && number[i+2] == ',' && number[i+3].is_a?(Integer) && number[i+4] == ']'
+        new_number = 3*number[i+1] + 2*number[i+3]
+        4.times { number.delete_at(i) }
+        number[i] = new_number
+        keep_going = true
+      end
+    end
   end
-end
-
-def magnitude(numbers)
-  # Just eval the numbers as a Ruby array of arrays, then recurse into it
-  evaled_numbers = eval(numbers.join)
-  recurse_magnitude(evaled_numbers)
+  number[0]
 end
 
 def explode(number)
