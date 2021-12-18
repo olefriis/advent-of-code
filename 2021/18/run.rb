@@ -1,9 +1,15 @@
-def magnitude(numbers)
+def recurse_magnitude(numbers)
   if numbers.is_a?(Integer)
     numbers
   else
-    3*magnitude(numbers[0]) + 2*magnitude(numbers[1])
+    3*recurse_magnitude(numbers[0]) + 2*recurse_magnitude(numbers[1])
   end
+end
+
+def magnitude(numbers)
+  # Just eval the numbers as a Ruby array of arrays, then recurse into it
+  evaled_numbers = eval(numbers.join)
+  recurse_magnitude(evaled_numbers)
 end
 
 def explode(number)
@@ -63,13 +69,10 @@ def reduce(number)
   end
 end
 
-lines = File.readlines('input').map(&:strip)
+lines = File.readlines('input').map(&:strip).map { |line| parse(line) }
 
-sum = parse(lines[0])
-1.upto(lines.length - 1) do |i|
-  line = parse(lines[i])
-  reduce(sum)
-  reduce(line)
+sum = lines[0]
+lines[1..-1].each do |line|
   puts ''
   puts "  #{sum.join}"
   puts "+ #{line.join}"
@@ -77,14 +80,14 @@ sum = parse(lines[0])
   reduce(sum)
   puts "= #{sum.join}"
 end
-puts "Magnitude of sum: #{magnitude(eval(sum.join))}"
+puts "Magnitude of sum: #{magnitude(sum)}"
 
 max_magnitude = 0
 lines.each do |line1|
   lines.each do |line2|
-    sum = ['[', *parse(line1), ',', *parse(line2), ']']
+    sum = ['[', *line1, ',', *line2, ']']
     reduce(sum)
-    max_magnitude = [max_magnitude, magnitude(eval(sum.join))].max
+    max_magnitude = [max_magnitude, magnitude(sum)].max
   end
 end
 puts "Max magnitude: #{max_magnitude}"
