@@ -70,12 +70,8 @@ scanners.each do |scanner|
   ALL_ROTATIONS.each do |rotation|
     ALL_ORIENTATIONS.each do |orientation|
       transformed_points = scanner.points.map { |point| orient_and_rotate(point, orientation, rotation) }
-      if !calculated_points.include?(transformed_points)
-        calculated_points << transformed_points
-        scanner.rotated_and_oriented_points << RotatedAndOrientedPoints.new(rotation, orientation, transformed_points)
-      else
-        puts "Duplicate points found for scanner #{scanner.name}"
-      end
+      calculated_points << transformed_points
+      scanner.rotated_and_oriented_points << RotatedAndOrientedPoints.new(rotation, orientation, transformed_points)
     end
   end
 end
