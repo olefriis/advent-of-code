@@ -3,11 +3,11 @@ require 'set'
 lines = File.readlines('input').map(&:strip)
 
 Scanner = Struct.new(:name, :points)
-# Is x, y, z positive or negative?
 Rotation = Struct.new(:x, :y, :z) # Do we negate x, y, or z?
-Orientation = Struct.new(:x, :y, :z) # Which order do we use the axes?
+Orientation = Struct.new(:x, :y, :z) # In which order do we use the axes?
 ScannerTransformation = Struct.new(:rotation, :orientation, :translation)
 
+# Some of these are probably redundant
 ALL_ROTATIONS = [
   Rotation.new(1, 1, 1),
   Rotation.new(1, 1, -1),
@@ -64,95 +64,56 @@ def transform_scanner(scanner, transformation)
   end
 end
 
-def overlapping_points(scanner1, scanner2)
-  # For each of scanner1's points, try out all rotations of scanner2 and all possible rotations
-  max_overlapping_points = []
-  max_overlapping_points_transformation = nil
+def overlapping_points(main_map, scanner)
   ALL_ROTATIONS.each do |rotation|
     ALL_ORIENTATIONS.each do |orientation|
-      scanner1.points.each do |point1|
-        scanner2.points.each do |point2|
-          p2_oriented_and_rotated = orient_and_rotate(point2, orientation, rotation)
-          # Find a translation that brings the transformed point2 back to point1
-          translation = [point1[0] - p2_oriented_and_rotated[0], point1[1] - p2_oriented_and_rotated[1], point1[2] - p2_oriented_and_rotated[2]]
+      scanner_points_oriented_and_rotated = scanner.points.map do |point|
+        orient_and_rotate(point, orientation, rotation)
+      end
+      main_map.each do |main_point|
+        scanner_points_oriented_and_rotated.each do |point_oriented_and_rotated|
+          # Find a translation that brings the transformed point back to main_point
+          translation = [main_point[0] - point_oriented_and_rotated[0], main_point[1] - point_oriented_and_rotated[1], main_point[2] - point_oriented_and_rotated[2]]
 
-          # Now see how many of scanner2's points match the translation
-          scanner2_points_mapped_to_scanner1 = scanner2.points.map do |p|
-            oriented_and_rotated = orient_and_rotate(p, orientation, rotation)
-            translate(oriented_and_rotated, translation)
-          end
-          overlapping_points = (scanner2_points_mapped_to_scanner1 & scanner1.points)
+          # Now see how many of the scanner's transformed points exist in the main map
+          scanner_points_mapped_to_main_map = scanner_points_oriented_and_rotated.map { |p| translate(p, translation) }
+          overlapping_points = (scanner_points_mapped_to_main_map & main_map)
 
-          if overlapping_points.length > max_overlapping_points.length
-            max_overlapping_points = overlapping_points
-            max_overlapping_points_transformation = ScannerTransformation.new(rotation, orientation, translation)
+          if overlapping_points.length >= 12
+            return ScannerTransformation.new(rotation, orientation, translation)
           end
         end
       end
     end
   end
 
-  [max_overlapping_points_transformation, max_overlapping_points]
+  nil
 end
-
-p scanners.map(&:name)
-#p scanners.map {|s| s.points.length}
-
-transformation, overlapping_points = overlapping_points(scanners[1], scanners[4])
-puts "Overlapping 1-4: #{overlapping_points.length}"
-#exit 0
-
 
 known_scanners = Set.new
-known_scanners << '--- scanner 0 ---'
+known_scanners << scanners[0].name
 translations = {}
 translations[scanners[0].name] = [0, 0, 0]
-
-# First, find another scanner that overlaps with the first one
-# This is so we can use the first scanner as a reference
-other_overlapping_scanners = scanners[1..-1].find do |other_scanner|
-  transformation, overlapping_points = overlapping_points(scanners[0], other_scanner)
-  if overlapping_points.length >= 12
-    puts "Scanner 0 overlaps with scanner #{other_scanner.name} with #{overlapping_points.count} points"
-    puts "Transformation: #{transformation}"
-    puts "Points before transformation #{other_scanner.points.length} #{other_scanner.points}"
-    transform_scanner(other_scanner, transformation)
-    translations[other_scanner.name] = transformation.translation
-    puts "Points after transformation #{other_scanner.points.length} #{other_scanner.points}"
-    puts "Scanner #{other_scanner.name} points (#{other_scanner.points.length}): #{other_scanner.points}"
-    known_scanners << other_scanner.name
-  end
-end
+main_map = scanners[0].points
+puts "Main map: #{main_map}"
 
 while known_scanners.length < scanners.length
-  puts "Trying new matches"
-  known_scanners.dup.each do |scanner1_name|
-    scanner1 = scanners.find { |s| s.name == scanner1_name }
-    scanners.each do |scanner2|
-      if known_scanners.include?(scanner2.name)
-        puts "#{scanner1.name} already knows #{scanner2.name}"
-        next
-      end
-      puts "Trying #{scanner1.name} and #{scanner2.name}"
-      transformation, overlapping_points = overlapping_points(scanner1, scanner2)
-      if overlapping_points.length >= 12
-        puts "Scanner #{scanner1.name} overlaps with scanner #{scanner2.name} with #{overlapping_points.count} points"
-        translations[scanner2.name] = transformation.translation
-        transform_scanner(scanner2, transformation)
-        known_scanners << scanner2.name
-      end
+  puts "Trying new matches. We now have #{known_scanners.length} scanners nailed."
+  scanners.filter { |scanner| !known_scanners.include?(scanner.name) }.each do |scanner|
+    puts "Trying #{scanner.name}"
+    transformation = overlapping_points(main_map, scanner)
+    if transformation
+      puts "Scanner #{scanner.name} is matching!"
+      translations[scanner.name] = transformation.translation
+      transform_scanner(scanner, transformation)
+      main_map |= scanner.points
+      known_scanners << scanner.name
     end
   end
 end
 
-all_points = Set.new
-scanners.each do |scanner|
-  scanner.points.each {|p| all_points << p}
-end
+puts "We have a total of #{main_map.length} points"
 
-puts "We have a total of #{all_points.length} points"
-
-p translations
 largest_manhattan_distance = 0
 scanners.each do |scanner1|
   scanners.each do |scanner2|
@@ -164,10 +125,3 @@ scanners.each do |scanner1|
 end
 
 puts "Largest manhattan distance: #{largest_manhattan_distance}"
-
-exit 0
-
-transformation, overlapping_points = overlapping_points(scanners[0], scanners[1])
-p overlapping_points.length
-p overlapping_points
-p transformation
