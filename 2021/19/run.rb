@@ -1,10 +1,32 @@
 require 'set'
 
+def orient_and_rotate(point, orientation, rotation)
+  oriented_point = [point[orientation[0]], point[orientation[1]], point[orientation[2]]]
+  oriented_and_rotated_point = [rotation[0] * oriented_point[0], rotation[1] * oriented_point[1], rotation[2] * oriented_point[2]]
+  oriented_and_rotated_point
+end
+
+def translate(point, translation)
+  [point[0] + translation[0], point[1] + translation[1], point[2] + translation[2]]
+end
+
+def transform_point(point, transformation)
+  p = orient_and_rotate(point, transformation.orientation, transformation.rotation)
+  translate(p, transformation.translation)
+end
+
+def transform_scanner(scanner, transformation)
+  scanner.points = scanner.points.map do |point|
+    transform_point(point, transformation)
+  end
+end
+
 lines = File.readlines('input').map(&:strip)
 
-Scanner = Struct.new(:name, :points)
+Scanner = Struct.new(:name, :points, :rotated_and_oriented_points)
 Rotation = Struct.new(:x, :y, :z) # Do we negate x, y, or z?
 Orientation = Struct.new(:x, :y, :z) # In which order do we use the axes?
+RotatedAndOrientedPoints = Struct.new(:rotation, :orientation, :points)
 ScannerTransformation = Struct.new(:rotation, :orientation, :translation)
 
 # Some of these are probably redundant
@@ -32,7 +54,7 @@ scanners = []
 scanner = nil
 lines.each do |line|
   if !scanner
-    scanner = Scanner.new(line, [])
+    scanner = Scanner.new(line, [], [])
   elsif line.empty?
     scanners << scanner
     scanner = nil
@@ -43,50 +65,38 @@ lines.each do |line|
 end
 scanners << scanner
 
-def orient_and_rotate(point, orientation, rotation)
-  oriented_point = [point[orientation[0]], point[orientation[1]], point[orientation[2]]]
-  oriented_and_rotated_point = [rotation[0] * oriented_point[0], rotation[1] * oriented_point[1], rotation[2] * oriented_point[2]]
-  oriented_and_rotated_point
-end
-
-def translate(point, translation)
-  [point[0] + translation[0], point[1] + translation[1], point[2] + translation[2]]
-end
-
-def transform_point(point, transformation)
-  p = orient_and_rotate(point, transformation.orientation, transformation.rotation)
-  translate(p, transformation.translation)
-end
-
-def transform_scanner(scanner, transformation)
-  scanner.points = scanner.points.map do |point|
-    transform_point(point, transformation)
+scanners.each do |scanner|
+  calculated_points = []
+  ALL_ROTATIONS.each do |rotation|
+    ALL_ORIENTATIONS.each do |orientation|
+      transformed_points = scanner.points.map { |point| orient_and_rotate(point, orientation, rotation) }
+      if !calculated_points.include?(transformed_points)
+        calculated_points << transformed_points
+        scanner.rotated_and_oriented_points << RotatedAndOrientedPoints.new(rotation, orientation, transformed_points)
+      else
+        puts "Duplicate points found for scanner #{scanner.name}"
+      end
+    end
   end
 end
 
 def overlapping_points(main_map, scanner)
-  ALL_ROTATIONS.each do |rotation|
-    ALL_ORIENTATIONS.each do |orientation|
-      scanner_points_oriented_and_rotated = scanner.points.map do |point|
-        orient_and_rotate(point, orientation, rotation)
-      end
-      main_map.each do |main_point|
-        scanner_points_oriented_and_rotated.each do |point_oriented_and_rotated|
-          # Find a translation that brings the transformed point back to main_point
-          translation = [main_point[0] - point_oriented_and_rotated[0], main_point[1] - point_oriented_and_rotated[1], main_point[2] - point_oriented_and_rotated[2]]
+  scanner.rotated_and_oriented_points.each do |rotated_and_oriented_points|
+    main_map.each do |main_point|
+      rotated_and_oriented_points.points.each do |rotated_and_oriented_point|
+        # Find a translation that brings the transformed point back to main_point
+        translation = [main_point[0] - rotated_and_oriented_point[0], main_point[1] - rotated_and_oriented_point[1], main_point[2] - rotated_and_oriented_point[2]]
 
-          # Now see how many of the scanner's transformed points exist in the main map
-          scanner_points_mapped_to_main_map = scanner_points_oriented_and_rotated.map { |p| translate(p, translation) }
-          overlapping_points = (scanner_points_mapped_to_main_map & main_map)
+        # Now see how many of the scanner's transformed points exist in the main map
+        scanner_points_mapped_to_main_map = rotated_and_oriented_points.points.map { |p| translate(p, translation) }
+        overlapping_points = scanner_points_mapped_to_main_map.filter { |p| main_map.include? p }
 
-          if overlapping_points.length >= 12
-            return ScannerTransformation.new(rotation, orientation, translation)
-          end
+        if overlapping_points.length >= 12
+          return ScannerTransformation.new(rotated_and_oriented_points.rotation, rotated_and_oriented_points.orientation, translation)
         end
       end
     end
   end
-
   nil
 end
 
@@ -94,7 +104,8 @@ known_scanners = Set.new
 known_scanners << scanners[0].name
 translations = {}
 translations[scanners[0].name] = [0, 0, 0]
-main_map = scanners[0].points
+main_map = Set.new
+main_map.merge(scanners[0].points)
 puts "Main map: #{main_map}"
 
 while known_scanners.length < scanners.length
@@ -106,7 +117,7 @@ while known_scanners.length < scanners.length
       puts "Scanner #{scanner.name} is matching!"
       translations[scanner.name] = transformation.translation
       transform_scanner(scanner, transformation)
-      main_map |= scanner.points
+      main_map.merge(scanner.points)
       known_scanners << scanner.name
     end
   end
