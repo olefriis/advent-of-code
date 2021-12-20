@@ -78,16 +78,15 @@ end
 
 def overlapping_points(main_map, scanner)
   scanner.rotated_and_oriented_points.each do |rotated_and_oriented_points|
+    translation_matches = {}
     main_map.each do |main_point|
       rotated_and_oriented_points.points.each do |rotated_and_oriented_point|
         # Find a translation that brings the transformed point back to main_point
         translation = [main_point[0] - rotated_and_oriented_point[0], main_point[1] - rotated_and_oriented_point[1], main_point[2] - rotated_and_oriented_point[2]]
-
-        # Now see how many of the scanner's transformed points exist in the main map
-        scanner_points_mapped_to_main_map = rotated_and_oriented_points.points.map { |p| translate(p, translation) }
-        overlapping_points = scanner_points_mapped_to_main_map.filter { |p| main_map.include? p }
-
-        if overlapping_points.length >= 12
+        # Note how many of these translations match
+        translation_matches[translation] ||= 0
+        translation_matches[translation] += 1
+        if translation_matches[translation] >= 12
           return ScannerTransformation.new(rotated_and_oriented_points.rotation, rotated_and_oriented_points.orientation, translation)
         end
       end
@@ -102,7 +101,6 @@ translations = {}
 translations[scanners[0].name] = [0, 0, 0]
 main_map = Set.new
 main_map.merge(scanners[0].points)
-puts "Main map: #{main_map}"
 
 while known_scanners.length < scanners.length
   puts "Trying new matches. We now have #{known_scanners.length} scanners nailed."
