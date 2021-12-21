@@ -1,19 +1,14 @@
-# Test input
-p1 = 4
-p2 = 8
+lines = File.readlines('input').map(&:strip)
+p1_position = lines[0].split(': ').last.to_i
+p2_position = lines[1].split(': ').last.to_i
 
-# Puzzle input
-p1 = 10
-p2 = 9
-
-turn = 1
-
+p1_turn = true
 die = 1
+p1_score, p2_score = 0, 0
 
-p1 -= 1
-p2 -= 1
-p1_score = 0
-p2_score = 0
+# Subtract one, making it easier to use % below
+p1_position -= 1
+p2_position -= 1
 
 while p1_score < 1000 && p2_score < 1000
   score = 0
@@ -22,21 +17,15 @@ while p1_score < 1000 && p2_score < 1000
     die += 1
   end
 
-  if turn == 1
-    p1 += score
-    p1 = p1 % 10
-    p1_score += p1+1
-    turn = 2
+  if p1_turn
+    p1_position = (p1_position + score) % 10
+    p1_score += p1_position + 1
   else
-    p2 += score
-    p2 = p2 % 10
-    p2_score += p2+1
-    turn = 1
+    p2_position = (p2_position + score) % 10
+    p2_score += p2_position + 1
   end
+
+  p1_turn = !p1_turn
 end
 
-p1 += 1
-p2 += 1
-
-puts "p1: #{p1}, p2: #{p2}, die: #{die}"
-puts "p1_score: #{p1_score}, p2_score: #{p2_score}, die: #{die-1}"
+puts "Result: #{[p1_score, p2_score].min * (die-1)}"
