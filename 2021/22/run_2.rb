@@ -1,37 +1,20 @@
 lines = File.readlines('input').map(&:strip)
 
-axisx = []
-axisy = []
-axisz = []
+Action = Struct.new(:onoff, :startx, :endx, :starty, :endy, :startz, :endz)
 
-lines.each do |line|
+actions = lines.map do |line|
   onoff, cube = line.split(' ')
   ranges = cube.split(',')
   ranges = ranges
     .map { |r| r.split('=').last }
     .map { |r| r.split('..').map(&:to_i) }
-  puts "#{onoff} #{ranges}"
 
-  startx, endx = ranges[0][0], ranges[0][1]
-  axisx << startx
-  axisx << endx + 1
-
-  starty, endy = ranges[1][0], ranges[1][1]
-  axisy << starty
-  axisy << endy + 1
-
-  startz, endz = ranges[2][0], ranges[2][1]
-  axisz << startz
-  axisz << endz + 1
+  Action.new(onoff, ranges[0][0], ranges[0][1], ranges[1][0], ranges[1][1], ranges[2][0], ranges[2][1])
 end
 
-axisx.uniq!
-axisy.uniq!
-axisz.uniq!
-
-axisx.sort!
-axisy.sort!
-axisz.sort!
+axisx = (actions.map(&:startx) + actions.map {|a| a.endx + 1}).uniq.sort
+axisy = (actions.map(&:starty) + actions.map {|a| a.endy + 1}).uniq.sort
+axisz = (actions.map(&:startz) + actions.map {|a| a.endz + 1}).uniq.sort
 
 puts "We have a #{axisx.length} x #{axisy.length} x #{axisz.length} 'grid'"
 
@@ -44,26 +27,17 @@ axisy_index = reverse_index(axisy)
 axisz_index = reverse_index(axisz)
 
 area = []
+actions.each do |action|
+  puts "Action: #{action}"
 
-linenumber = 1
-lines.each do |line|
-  puts "Line #{linenumber}"
-  linenumber += 1
-  onoff, cube = line.split(' ')
-  ranges = cube.split(',')
-  ranges = ranges
-    .map { |r| r.split('=').last }
-    .map { |r| r.split('..').map(&:to_i) }
-  puts "#{onoff} #{ranges}"
-
-  startx, endx = ranges[0]
-  starty, endy = ranges[1]
-  startz, endz = ranges[2]
+  startx, endx = action.startx, action.endx
+  starty, endy = action.starty, action.endy
+  startz, endz = action.startz, action.endz
   startx_index, endx_index = axisx_index[startx], axisx_index[endx + 1]
   starty_index, endy_index = axisy_index[starty], axisy_index[endy + 1]
   startz_index, endz_index = axisz_index[startz], axisz_index[endz + 1]
 
-  if onoff == 'on'
+  if action.onoff == 'on'
     startx_index.upto(endx_index-1) do |x|
       area[x] ||= []
       starty_index.upto(endy_index-1) do |y|
