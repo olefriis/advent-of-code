@@ -1,4 +1,3 @@
-require 'pry'
 require 'set'
 
 Instruction = Struct.new(:operator, :arg1, :arg2)
@@ -48,6 +47,7 @@ def execute(program, input, input_memory={})
   memory
 end
 
+# Chop up the program into parts, each of them starting with an 'inp' instruction
 def program_parts(program)
   result = []
   current_instructions = nil
@@ -95,4 +95,4 @@ def recurse_digits(parts, index, input_z, wanted_z)
 end
 
 recurse_digits(parts, 0, 0, 0)
-binding.pry
+puts WINNING_DIGITS.reverse.join
