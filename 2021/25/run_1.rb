@@ -1,5 +1,3 @@
-require 'pry'
-
 map = File.readlines('input').map(&:strip).map {|line| line.split('')}
 
 def print_map(map)

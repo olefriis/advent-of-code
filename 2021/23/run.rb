@@ -1,15 +1,3 @@
-Configuration = Struct.new(:hallway, :room1, :room2, :room3, :room4) do
-  def valid?
-    # No amphipod should be above any room
-    hallway[2] == nil && hallway[4] == nil && hallway[6] == nil && hallway[8] == nil
-  end
-
-  def done?
-    # All rooms should have the same kind of amphipod
-    room1[0].type == room1[1].type && room1[0].type == room1[2].type && room2[0].type == room2[1].type && room3[0].type == room3[0].type
-  end
-end
-
 # The configuration consists of an array of each of the 4 rooms, and finally an array for the hallway
 
 # Starting configuration - test input
