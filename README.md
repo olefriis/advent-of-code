@@ -1,4 +1,4 @@
-# Advent of Code
+# Advent of Code PR
 
 These are my solutions to Advent of Code. I did 2020 as the first year, which means that folder is a complete
 mess of really ugly code and sometimes cleaned-up "take two" versions. I primarily used Ruby, but tried to
