@@ -13,4 +13,4 @@ end
 elves << current_elf
 
 puts "Part 1: #{elves.max}"
-puts "Part 2: #{elves.sort.reverse[0..2].sum}"
+puts "Part 2: #{elves.max(3).sum}"
