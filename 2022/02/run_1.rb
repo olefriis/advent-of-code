@@ -44,3 +44,4 @@ points_2 = rounds.map do |round|
 end.sum
 
 puts "Part 2: #{points_2}"
+ 
