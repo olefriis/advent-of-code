@@ -1,4 +1,3 @@
-require 'pry'
 arrangement, moves = File.read('05/input').split("\n\n")
 
 arrangement_lines = arrangement.lines
