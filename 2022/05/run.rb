@@ -1,7 +1,5 @@
 arrangement, moves = File.read('05/input').split("\n\n")
 
-arrangement_lines = arrangement.lines
-
 def initialize_stacks(arrangement_lines)
   number_of_stacks = (arrangement_lines[0].chars.count+1)/4
   stacks = []
@@ -17,6 +15,7 @@ def initialize_stacks(arrangement_lines)
   stacks
 end
 
+arrangement_lines = arrangement.lines
 stacks = initialize_stacks(arrangement_lines)
 moves.lines.map(&:strip).each do |move|
   move =~ /move (\d+) from (\d+) to (\d+)/
