@@ -1,5 +1,3 @@
-require 'pry'
-
 lines = File.readlines('07/input').map(&:strip)
 
 AoCDirectory = Struct.new(:name, :parent, :children)
@@ -7,9 +5,9 @@ AoCFile = Struct.new(:name, :size)
 
 root_directory = AoCDirectory.new('/', nil, [])
 current_directory = root_directory
+all_directories = []
 
 lines.each do |line|
-  puts line
   if line == '$ cd /'
     current_directory = root_directory
   elsif line == '$ cd ..'
@@ -26,7 +24,9 @@ lines.each do |line|
   elsif line =~ /dir (.*)/
     name = $1
     raise "Directory already exists: #{name}" if current_directory.children.any? { |child| child.name == name }
-    current_directory.children << AoCDirectory.new(name, current_directory, [])
+    directory = AoCDirectory.new(name, current_directory, [])
+    current_directory.children << directory
+    all_directories << directory
   else
     raise "Unknown command: #{line}"
   end
@@ -42,46 +42,16 @@ def size_of_directory(directory)
   end.sum
 end
 
-@sizes = 0
-
-def calculate_sizes_of_at_most_100000(directory)
-  size = size_of_directory(directory)
-  @sizes += size if size <= 100000
-  directory.children.each do |child|
-    if child.is_a?(AoCDirectory)
-      calculate_sizes_of_at_most_100000(child)
-    end
-  end
-end
-
-calculate_sizes_of_at_most_100000(root_directory)
-puts "Part 1: #{@sizes}"
+part1 = all_directories
+  .map { |directory| size_of_directory(directory) }
+  .select { |size| size <= 100000 }
+  .sum
+puts "Part 1: #{part1}"
 
 free_space = 70000000 - size_of_directory(root_directory)
-@space_needed = 30000000 - free_space
-puts "Free space: #{free_space}"
-puts "Space needed: #{@space_needed}"
-
-@smallest_diff = 70000000
-@directory_with_smallest_diff = nil
-
-def find_suiting_directory(directory)
-  size = size_of_directory(directory)
-  if size >= @space_needed
-    diff = size - @space_needed
-    if diff < @smallest_diff
-      @smallest_diff = diff
-      @directory_with_smallest_diff = directory
-    end
-  end
-  directory.children.each do |child|
-    if child.is_a?(AoCDirectory)
-      find_suiting_directory(child)
-    end
-  end
-end
-
-find_suiting_directory(root_directory)
-puts "Directory: #{@directory_with_smallest_diff.name}"
-
-puts "Part 2: #{size_of_directory(@directory_with_smallest_diff)}"
+space_needed = 30000000 - free_space
+part2 = all_directories
+  .map { |directory| size_of_directory(directory) }
+  .select { |size| size >= space_needed }
+  .min
+puts "Part 2: #{part2}"
