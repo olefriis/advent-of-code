@@ -20,8 +20,7 @@ def move_knots(rope)
 end
 
 def solve(lines, rope_length)
-  rope = []
-  rope_length.times { rope << [0,0] }
+  rope = rope_length.times.map { [0,0] }
   visited = Set.new
 
   lines.each do |line|
