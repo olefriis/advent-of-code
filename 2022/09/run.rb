@@ -8,50 +8,35 @@ DIRECTIONS = {
   'R' => [1,0],
 }
 
-def move_knots
-  1.upto(@rope.size-1) do |i|
-    previous = @rope[i-1]
-    current = @rope[i]
+def move_knots(rope)
+  rope.each_cons(2) do |previous, current|
+    next if (previous[0] - current[0]).abs <= 1 && (previous[1] - current[1]).abs <= 1
 
-    next if previous[0] >= current[0]-1 &&
-      previous[0] <= current[0]+1 &&
-      previous[1] >= current[1]-1 &&
-      previous[1] <= current[1]+1
-
-    if previous[0] < current[0]
-      current[0] -= 1
-    elsif previous[0] > current[0]
-      current[0] += 1
-    end
-    if previous[1] < current[1]
-      current[1] -= 1
-    elsif previous[1] > current[1]
-      current[1] += 1
-    end
+    current[0] -= 1 if previous[0] < current[0]
+    current[0] += 1 if previous[0] > current[0]
+    current[1] -= 1 if previous[1] < current[1]
+    current[1] += 1 if previous[1] > current[1]
   end
 end
 
-def process(lines)
+def solve(lines, rope_length)
+  rope = []
+  rope_length.times { rope << [0,0] }
+  visited = Set.new
+
   lines.each do |line|
     line =~ /(\w) (\d+)/
     direction, moves = DIRECTIONS[$1], $2.to_i
     moves.times do
-      @rope[0][0] += direction[0]
-      @rope[0][1] += direction[1]
-      move_knots
-      @visited << @rope[-1].dup
+      rope[0][0] += direction[0]
+      rope[0][1] += direction[1]
+      move_knots(rope)
+      visited << rope.last.dup
     end
   end
+
+  visited.size
 end
 
-@visited = Set.new
-@rope = []
-2.times { @rope << [0,0] }
-process(lines)
-puts "Part 1: #{@visited.size}"
-
-@visited = Set.new
-@rope = []
-10.times { @rope << [0,0] }
-process(lines)
-puts "Part 2: #{@visited.size}"
+puts "Part 1: #{solve(lines, 2)}"
+puts "Part 2: #{solve(lines, 10)}"
