@@ -20,9 +20,5 @@ puts "Part 2:"
 x_values.each_with_index do |x, i|
   pixel = i % 40
   puts '' if pixel == 0 && i > 0
-  if x >= pixel-1 && x < pixel + 2
-    print '#'
-  else
-    print '.'
-  end
+  print(if x >= pixel-1 && x < pixel + 2 ? '#' : '.')
 end
