@@ -15,6 +15,8 @@ chars.each_with_index do |line, y|
   end
 end
 
+# A breadth-first search would be enough, because the edges are all of length 1.
+# Anyway, I got started on a Dijkstra's algorithm, so that's what I went with.
 def shortest_path(start, destination, heights)
   edge = { start => 0 }
   visited = { start => 0 }
