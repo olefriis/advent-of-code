@@ -112,15 +112,18 @@ def visit2(valve1, to_valve1, traveltime_valve1, valve2, to_valve2, traveltime_v
     return
   end
 
-  # Let time pass this minute
-  minute += 1
-  released_pressure_so_far += pressure_released_per_minute(opened)
+  # Let time pass a few minutes
+  minutes_we_can_pass = [traveltime_valve1 + 1, traveltime_valve2 + 1, 27 - minute].min
+  return if minutes_we_can_pass < 1
+  minute += minutes_we_can_pass
+  released_pressure_so_far += minutes_we_can_pass * pressure_released_per_minute(opened)
   check_best_pressure(released_pressure_so_far)
 
-  traveltime_valve1 -= 1
-  traveltime_valve2 -= 1
+  traveltime_valve1 -= minutes_we_can_pass
+  traveltime_valve2 -= minutes_we_can_pass
 
   newly_opened = []
+  puts "Something up" if traveltime_valve1 < -1 || traveltime_valve2 < -1
 
   if traveltime_valve1 == -1
     # We have arrived at the destination valve _and_ spent a minute opening the valve. So now we're out of work.
@@ -140,12 +143,18 @@ def visit2(valve1, to_valve1, traveltime_valve1, valve2, to_valve2, traveltime_v
   newly_opened.each {|no| opened.delete(no)}
 end
 
-#@best_pressure = nil
-#visit('AA', 1, Set.new, 0)
-#puts "Part 1: #{@best_pressure}"
+@best_pressure = nil
+visit('AA', 1, Set.new, 0)
+puts "Part 1: #{@best_pressure}"
 
+# Wait a looooong time for this!
 @best_pressure = nil
 visit2('AA', nil, nil, 'AA', nil, nil, 1, Set.new, 0)
 puts "Part 2: #{@best_pressure}"
 
 # 2215: Too low
+# 2221: Too low
+# 2261: Too low
+# 2324: Still not correct
+# 2325: Still not correct
+# 2496: 
