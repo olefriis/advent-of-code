@@ -11,28 +11,21 @@ lines.each do |line|
   CONNECTIONS[valve] = other_valves.split(', ')
 end
 
-RELEVANT_VALVES = Set.new(FLOWS.keys.select {|valve| FLOWS[valve] > 0})
-DISTANCE_CACHE = {}
+RELEVANT_VALVES = FLOWS.keys.select {|valve| FLOWS[valve] > 0}
 
-def calculate_distance_to_remaining_valves(current_valve, opened_valves)
-  cache_key = "#{current_valve}-#{opened_valves.to_a.sort.join('-')}"
-  return DISTANCE_CACHE[cache_key] if DISTANCE_CACHE[cache_key]
-  return {} if current_valve == '--'
-
-  remaining_valves = RELEVANT_VALVES - opened_valves - [current_valve]
+DISTANCES = {}
+FLOWS.keys.each do |valve|
   distances = {}
-  visited = Set.new
-  edge = Set.new
-  edge << current_valve
-  next_edge = Set.new
+  visited, edge, next_edge = Set.new, Set.new, Set.new
+  visited << valve
+  edge << valve
   distance = 0
   while edge.any?
     distance += 1
-    edge.each do |valve|
-      CONNECTIONS[valve].each do |other_valve|
+    edge.each do |edge_valve|
+      CONNECTIONS[edge_valve].each do |other_valve|
         next if visited.include?(other_valve)
-
-        distances[other_valve] = distance if remaining_valves.include?(other_valve)
+        distances[other_valve] = distance
         next_edge << other_valve
         visited << other_valve
       end
@@ -42,8 +35,7 @@ def calculate_distance_to_remaining_valves(current_valve, opened_valves)
     next_edge = Set.new
   end
 
-  DISTANCE_CACHE[cache_key] = distances
-  distances
+  DISTANCES[valve] = distances
 end
 
 @best_pressure = nil
@@ -61,10 +53,9 @@ end
 def visit(valve, minute, opened, released_pressure_so_far)
   check_best_pressure(released_pressure_so_far)
 
-  remaining_valves = calculate_distance_to_remaining_valves(valve, opened)
-
   # Try to see if we can open any other valves
-  remaining_valves.each do |other_valve, distance|
+  (RELEVANT_VALVES - opened).each do |other_valve|
+    distance = DISTANCES[valve][other_valve]
     next if minute + distance > 29 # No point if we don't have time to open the valve _and_ let it release pressure
     released_pressure_while_traveling_and_opening_next_valve = (distance + 1) * pressure_released_per_minute(opened)
 
@@ -79,14 +70,14 @@ def visit(valve, minute, opened, released_pressure_so_far)
 end
 
 def visit2(valve1, to_valve1, traveltime_valve1, valve2, to_valve2, traveltime_valve2, minute, opened, released_pressure_so_far)
-  return if minute > 26
+  return if minute >= 26
+
   # Ensure that we have a place to go
   if !to_valve1
-    remaining_valves = calculate_distance_to_remaining_valves(valve1, opened)
     has_others_to_try_out = false
-    remaining_valves.each do |other_valve, distance|
-      next if other_valve == to_valve2
+    (RELEVANT_VALVES - opened - [to_valve2]).each do |other_valve|
       has_others_to_try_out = true
+      distance = DISTANCES[valve1][other_valve]
       visit2(to_valve1, other_valve, distance, valve2, to_valve2, traveltime_valve2, minute, opened, released_pressure_so_far)
     end
     if !has_others_to_try_out
@@ -98,11 +89,10 @@ def visit2(valve1, to_valve1, traveltime_valve1, valve2, to_valve2, traveltime_v
 
   # Ensure the elephant has a place to go
   if !to_valve2
-    remaining_valves = calculate_distance_to_remaining_valves(valve2, opened)
     has_others_to_try_out = false
-    remaining_valves.each do |other_valve, distance|
-      next if other_valve == to_valve1
+    (RELEVANT_VALVES - opened - [to_valve1]).each do |other_valve|
       has_others_to_try_out = true
+      distance = DISTANCES[valve2][other_valve]
       visit2(valve1, to_valve1, traveltime_valve1, to_valve2, other_valve, distance, minute, opened, released_pressure_so_far)
     end
     if !has_others_to_try_out
@@ -118,12 +108,11 @@ def visit2(valve1, to_valve1, traveltime_valve1, valve2, to_valve2, traveltime_v
   minute += minutes_we_can_pass
   released_pressure_so_far += minutes_we_can_pass * pressure_released_per_minute(opened)
   check_best_pressure(released_pressure_so_far)
+  return if minute >= 26
 
   traveltime_valve1 -= minutes_we_can_pass
   traveltime_valve2 -= minutes_we_can_pass
-
   newly_opened = []
-  puts "Something up" if traveltime_valve1 < -1 || traveltime_valve2 < -1
 
   if traveltime_valve1 == -1
     # We have arrived at the destination valve _and_ spent a minute opening the valve. So now we're out of work.
@@ -144,17 +133,10 @@ def visit2(valve1, to_valve1, traveltime_valve1, valve2, to_valve2, traveltime_v
 end
 
 @best_pressure = nil
-visit('AA', 1, Set.new, 0)
+visit('AA', 1, [], 0)
 puts "Part 1: #{@best_pressure}"
 
 # Wait a looooong time for this!
 @best_pressure = nil
-visit2('AA', nil, nil, 'AA', nil, nil, 1, Set.new, 0)
+visit2('AA', nil, nil, 'AA', nil, nil, 1, [], 0)
 puts "Part 2: #{@best_pressure}"
-
-# 2215: Too low
-# 2221: Too low
-# 2261: Too low
-# 2324: Still not correct
-# 2325: Still not correct
-# 2496: 
