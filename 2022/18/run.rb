@@ -11,7 +11,7 @@ part1 = positions
       [-1,0,0], [1,0,0],
       [0,-1,0], [0,1,0],
       [0,0,-1], [0,0,1]
-    ].map {|dx, dy, dz| positions[[x + dx, y + dy, z + dz]] ? 0 : 1}.sum
+    ].count {|dx, dy, dz| !positions[[x + dx, y + dy, z + dz]]}
   end.sum
 puts "Part 1: #{part1}"
 
@@ -52,19 +52,10 @@ end
 part2 = positions
   .keys
   .map do |x, y, z|
-    exterior_left = exterior?([x-1, y, z], positions.keys)
-    exterior_right = exterior?([x+1, y, z], positions.keys)
-    exterior_above = exterior?([x, y-1, z], positions.keys)
-    exterior_below = exterior?([x, y+1, z], positions.keys)
-    exterior_further_in = exterior?([x, y, z-1], positions.keys)
-    exterior_further_out = exterior?([x, y, z+1], positions.keys)
-    sum = 0
-    sum += 1 if exterior_left
-    sum += 1 if exterior_right
-    sum += 1 if exterior_above
-    sum += 1 if exterior_below
-    sum += 1 if exterior_further_in
-    sum += 1 if exterior_further_out
-    sum
+    [
+      [-1,0,0], [1,0,0],
+      [0,-1,0], [0,1,0],
+      [0,0,-1], [0,0,1]
+    ].count {|dx, dy, dz| exterior?([x + dx, y + dy, z + dz], positions.keys)}
   end.sum
 puts "Part 2: #{part2}"
