@@ -1,5 +1,3 @@
-require 'pry'
-
 lines = File.readlines('21/input', chomp: true)
 resolved_monkeys = {}
 Monkey = Struct.new(:name, :operator, :value1, :value2)
