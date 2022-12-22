@@ -1,7 +1,15 @@
 require 'pry'
 map = {}
 
-map_input, direction_input = File.read('22/test_input').split("\n\n")
+test = false
+filename = test ? '22/test_input' : '22/input'
+TILE_SIZE = test ? 4 : 50
+LEFT = [-1, 0]
+UP = [0, -1]
+RIGHT = [1, 0]
+DOWN = [0, 1]
+
+map_input, direction_input = File.read(filename).split("\n\n")
 map_input.lines.map(&:chomp).each_with_index do |line, y|
   line.chars.each_with_index do |char, x|
     map[[x, y]] = char unless char == ' '
@@ -72,52 +80,29 @@ def solve1(position, map, instructions)
 end
 
 def side(position, map)
-  middle_x_min, middle_x_max = map.keys.select {|_, y| y == 0}.map {|x, _| x}.minmax
-  middle_y_min, middle_y_max = map.keys.select {|x, _| x == 0}.map {|_, y| y}.minmax
+  x_section, y_section = position[0] / TILE_SIZE, position[1] / TILE_SIZE
 
-  if position[0] >= middle_x_min && position[0] <= middle_x_max
-    if position[1] < middle_y_min
-      1 # Top
-    elsif position[1] > middle_y_max
-      5 # Bottom
-    else
-      4 # middle
-    end
-  elsif position[1] >= middle_y_min && position[1] <= middle_y_max 
-    if position[0] > middle_x_max
-      4
-    elsif position[0] < (middle_x_min / 2)
-      2
-    elsif position[0] < middle_x_min
-      3
-    else
-      raise "Invalid position: #{position}"
-    end
-  elsif position[0] > middle_x_min && position[1] > middle_y_max
-    6
-  else
-    raise "Invalid position: #{position}"
-  end
-end
-
-def easy_movement(side1, side2)
-  return true if side1 == side2
-
-  [
-    [1, 4],
-    [2, 3],
-    [3, 4],
-    [4, 5],
-    [5, 6]
-  ].include?([side1, side2].sort)
+  sections = {
+    [2, 0] => 1,
+    [0, 1] => 2,
+    [1, 1] => 3,
+    [2, 1] => 4,
+    [2, 2] => 5,
+    [3, 2] => 6,
+  }
+  sections[[x_section, y_section]] || raise("Invalid position #{position} - section #{x_section}, #{y_section}")
 end
 
 def wrap(position, movement, map)
+  x_section, y_section = position[0] / TILE_SIZE, position[1] / TILE_SIZE
+
   current_side = side(position, map)
-  max_x = map.keys.map {|x, _| x}.max
-  max_y = map.keys.map {|_, y| y}.max
-  middle_x_min, middle_x_max = map.keys.select {|_, y| y == 0}.map {|x, _| x}.minmax
-  middle_y_min, middle_y_max = map.keys.select {|x, _| x == 0}.map {|_, y| y}.minmax
+  max_x = TILE_SIZE * 4 - 1
+  max_y = TILE_SIZE * 3 - 1
+  middle_x_min = TILE_SIZE * 2
+  middle_x_max = TILE_SIZE * 3 - 1
+  middle_y_min = TILE_SIZE
+  middle_y_max = TILE_SIZE * 2 - 1
 
   if movement == [1, 0]
     case current_side
@@ -185,7 +170,6 @@ def rotate_left(movement)
 end
 
 def alter_direction(direction, current_side, new_side)
-  puts "Alter direction #{direction} #{current_side} #{new_side}"
   case current_side
   when 1
     case new_side
@@ -291,7 +275,7 @@ def solve2(position, map, instructions)
     end
   end
 
-  show(movement_map)
+  #show(movement_map)
   [position, direction]
 end
 
@@ -388,11 +372,11 @@ part1 = 1000 * (part1_position[1] + 1) + 4 * (part1_position[0] + 1) + part1_dir
 puts "Part 1: #{part1}"
 
 # GRRR! Real input has a different layout than the example input
-def square(upper_right, side_length, map)
+def copy_tile(upper_right, map)
   result = []
-  0.upto(side_length - 1) do |y|
+  0.upto(TILE_SIZE - 1) do |y|
     line = []
-    0.upto(side_length - 1) do |x|
+    0.upto(TILE_SIZE - 1) do |x|
       line << map[[upper_right[0] + x, upper_right[1] + y]]
     end
     result << line
@@ -400,7 +384,7 @@ def square(upper_right, side_length, map)
   result
 end
 
-def place(area, upper_right, map)
+def place_tile(area, upper_right, map)
   area.each_with_index do |line, y|
     line.each_with_index do |char, x|
       map[[upper_right[0] + x, upper_right[1] + y]] = char
@@ -412,35 +396,35 @@ def rotate_2d_right(matrix)
   matrix.transpose.map(&:reverse)
 end
 
-def place_areas(areas, side_length)
+def place_tiles(tiles)
   new_map = {}
-  place(areas[0], [2*side_length, 0], new_map)
-  place(areas[1], [0, side_length], new_map)
-  place(areas[2], [side_length, side_length], new_map)
-  place(areas[3], [2*side_length, side_length], new_map)
-  place(areas[4], [2*side_length, 2*side_length], new_map)
-  place(areas[5], [3*side_length, 2*side_length], new_map)
+  place_tile(tiles[0], [2*TILE_SIZE, 0], new_map)
+  place_tile(tiles[1], [0, TILE_SIZE], new_map)
+  place_tile(tiles[2], [TILE_SIZE, TILE_SIZE], new_map)
+  place_tile(tiles[3], [2*TILE_SIZE, TILE_SIZE], new_map)
+  place_tile(tiles[4], [2*TILE_SIZE, 2*TILE_SIZE], new_map)
+  place_tile(tiles[5], [3*TILE_SIZE, 2*TILE_SIZE], new_map)
   new_map
 end
 
 def map_example_input(map)
-  area1 = square([8, 0], 4, map)
-  area2 = square([0, 4], 4, map)
-  area3 = square([4, 4], 4, map)
-  area4 = square([8, 4], 4, map)
-  area5 = square([8, 8], 4, map)
-  area6 = square([12, 8], 4, map)
-  place_areas([area1, area2, area3, area4, area5, area6], 4)
+  area1 = copy_tile([2*TILE_SIZE, 0], map)
+  area2 = copy_tile([0, TILE_SIZE], map)
+  area3 = copy_tile([TILE_SIZE, TILE_SIZE], map)
+  area4 = copy_tile([2*TILE_SIZE, TILE_SIZE], map)
+  area5 = copy_tile([2*TILE_SIZE, 2*TILE_SIZE], map)
+  area6 = copy_tile([3*TILE_SIZE, 2*TILE_SIZE], map)
+  place_tiles([area1, area2, area3, area4, area5, area6])
 end
 
-def map_actual_input(map, side_length: 50)
-  area1 = square([side_length, 0], side_length, map)
-  area2 = rotate_2d_right(square([0, 3*side_length], side_length, map))
-  area3 = rotate_2d_right(square([0, 2*side_length], side_length, map))
-  area4 = square([side_length, side_length], side_length, map)
-  area5 = square([side_length, 2*side_length], side_length, map)
-  area6 = rotate_2d_right(rotate_2d_right(square([2*side_length, 0], side_length, map)))
-  place_areas([area1, area2, area3, area4, area5, area6], side_length)
+def map_actual_input(map)
+  area1 = copy_tile([TILE_SIZE, 0], map)
+  area2 = rotate_2d_right(copy_tile([0, 3*TILE_SIZE], map))
+  area3 = rotate_2d_right(copy_tile([0, 2*TILE_SIZE], map))
+  area4 = copy_tile([TILE_SIZE, TILE_SIZE], map)
+  area5 = copy_tile([TILE_SIZE, 2*TILE_SIZE], map)
+  area6 = rotate_2d_right(rotate_2d_right(copy_tile([2*TILE_SIZE, 0], map)))
+  place_tiles([area1, area2, area3, area4, area5, area6])
 end
 
 direction_to_number = {
@@ -450,55 +434,26 @@ direction_to_number = {
   [0, -1] => 3
 }
 
-visualize_wrapped_movements(map)
-binding.pry
+#visualize_wrapped_movements(map)
 
-#part2_map = map_example_input(map)
-part2_map = map_actual_input(map, side_length: 50)
-show(part2_map)
+part2_map = test ? map_example_input(map) : map_actual_input(map)
 position_x = part2_map.keys.select {|_, y| y == 0}.map{|x, _| x}.min
 position = [position_x, 0]
 part_2_position, part_2_direction = solve2(position, part2_map, instructions)
 part_2_side = side(part_2_position, part2_map)
-if part_2_side == 3
-  puts 'Inside 3'
-  # Get point inside the square
-  position_in_square = [part_2_position[0] - 50, part_2_position[1] - 50]
-  rotated_back = rotate_left(position_in_square)
-  part_2_position = [rotated_back[0], rotated_back[1] + 150]
-  part_2_direction = rotate_left(part_2_direction)
+if !test
+  if part_2_side == 3
+    puts 'Inside 3'
+    # Get point inside the square
+    position_in_square = [part_2_position[0] - TILE_SIZE, part_2_position[1] - TILE_SIZE]
+    rotated_back = rotate_left(position_in_square)
+    part_2_position = [rotated_back[0], rotated_back[1] + 3*TILE_SIZE]
+    part_2_direction = rotate_left(part_2_direction)
+    puts 'I have an answer for you, but it will probably be off with 1000. See run_2.rb instead.'
+  else
+    puts 'Sorry, not inside section 3. You will have to do some work yourself now...'
+  end
 end
 part_2_direction_number = direction_to_number[part_2_direction]
 part2 = 1000 * (part_2_position[1] + 1) + 4 * (part_2_position[0] + 1) + part_2_direction_number
 puts "Part 2: #{part2}"
-binding.pry
-
-# > part_2_position
-# => [105, 29]
-# 30227: Too low :-(
-# 30228: Too low
-
-# > part_2_position
-# => [122, 63]
-# So part_2_position = [72, 63]
-# 64293: Too low
-
-# > part_2_position
-# => [120, 115]
-# So part_2_position = [70, 115]
-# 116287: Wrong!
-
-# > part_2_position
-# => [78, 87]
-# So [28, 37] in side 3, which is rotated, so rotating back left it ends at position [37, 22]
-# Side 3 is 100 cells down in the real input, so ends up at [37,122]
-# > part_2_direction
-# => [-1, 0]
-# But we have to rotate left. So pointing left originally, now pointing down.
-# part_2_position = [37,122]
-# part_2_direction = [0, 1]
-# 123154: Wrong
-# Whoops! Forgot
-#> part_2_direction_number = direction_to_number[part_2_direction]
-#=> 1
-# 123153: Wrong
