@@ -1,4 +1,5 @@
 require 'set'
+require 'pry'
 blueprints = {}
 File.readlines('19/input', chomp: true).map do |line|
   title, rest = line.split(': ')
@@ -53,43 +54,44 @@ Configuration = Struct.new(:resources, :robots, :upcoming_robot) do
 end
 
 def solve(blueprint, iterations)
+  puts "Solving for blueprint #{blueprint}"
   initial_resources = {'ore' => 0, 'clay' => 0, 'obsidian' => 0, 'geode' => 0}
   initial_robots = {'ore' => 1, 'clay' => 0, 'obsidian' => 0, 'geode' => 0}
 
+  max_resources_required = {'ore' => 0, 'clay' => 0, 'obsidian' => 0, 'geode' => 1000}
+  blueprint.each do |robot_type, requirements|
+    requirements.each do |resource, amount|
+      max_resources_required[resource] = [max_resources_required[resource], amount].max
+    end
+  end
+
   configurations = [Configuration.new(initial_resources, initial_robots, nil)]
   iterations.times do |i|
+    puts "Iteration #{i}. Configurations: #{configurations.length}"
     new_configurations = []
+
     configurations.each do |configuration|
-      number_of_robots_we_can_build = 0
-      # Attempt to build any robot we have resources for
+      new_configurations << configuration # Consider _not_ doing anything this round
+
+      # Attempt to build any robot we have resources for, as long as we're not already at
+      # "max required capacity" for it (we can only build one new robot per minute anyway)
       blueprint.each do |robot_type, requirements|
-        if configuration.can_build?(requirements)
+        if configuration.can_build?(requirements) && max_resources_required[robot_type] > configuration.robots[robot_type]
           new_configurations << configuration.build(robot_type, requirements)
-          number_of_robots_we_can_build += 1
         end
       end
-
-      # Only consider _not_ doing anything if we're unable to make every single robot type that we dig resources for
-      robots_we_dig_resources_for = blueprint.keys.select {|robot_type| blueprint[robot_type].all? {|resource, amount| amount == 0 || configuration.robots[resource] > 0}}
-      new_configurations << configuration if number_of_robots_we_can_build < robots_we_dig_resources_for.length
     end
 
-    # Then let time pass for each of them
-    configurations = new_configurations.uniq.map {|configuration| configuration.pass_time}
-
-    # Heuristic found somewhere random on the internet: Prune so we only carry on "the 5000 best" configurations,
-    # where geode resources are the most important, then geode robots, then obisian resources, then obsidian robots, etc.
-    #
-    # However, if we instead go for "the 1000 best", it gives the wrong answer. So this seems like a completely
-    # arbitrary heuristic.
-    configurations = configurations.uniq.max_by(5000) do |configuration|
-      [
-        configuration.resources['geode'], configuration.robots['geode'],
-        configuration.resources['obsidian'], configuration.robots['obsidian'],
-        configuration.resources['clay'], configuration.robots['clay'],
-        configuration.resources['ore'], configuration.robots['ore'],
-      ]
-    end
+    configurations = new_configurations
+      # "Shrink" configurations where resources are above the "max required capacity"
+      .each do |configuration|
+        configuration.resources.keys.each do |resource|
+          configuration.resources[resource] = [configuration.resources[resource], max_resources_required[resource]].min
+        end
+      end
+      .uniq
+      # Then let time pass for each of them
+      .map {|configuration| configuration.pass_time}
   end
 
   configurations.map {|c| c.resources['geode']}.max
