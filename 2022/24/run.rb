@@ -61,27 +61,24 @@ def visualize(blizzards, positions)
   end
 end
 
-def move(position, destination, blizzards)
-  positions = [position]
+def move(start, destination, blizzards)
+  positions = [start]
   moves = 0
   loop do
+    return moves if positions.include?(destination)
+    moves += 1
+
     #puts "Moves: #{moves}. Positions: #{positions}"
     #visualize(blizzards, positions)
     move_blizzards(blizzards)
     occupied = blizzard_occupations(blizzards)
 
-    new_positions = Set.new()
-    positions.each do |position|
+    positions = positions.flat_map do |position|
       [[0, -1], [-1,  0], [0,  0], [1,  0], [0, 1]]
         .map {|x, y| [position[0] + x, position[1] + y]}
-        .select {|x, y| (x == 1 && y == 0) || (x == WIDTH-2 && y == HEIGHT-1) || (x > 0 && x < WIDTH-1 && y >= 1 && y < HEIGHT-1)}
+        .select {|x, y| [start, destination].include?([x, y]) || (x > 0 && x < WIDTH-1 && y >= 1 && y < HEIGHT-1)}
         .reject {|x, y| occupied.include?([x, y])}
-        .each {|pos| new_positions << pos}
-    end
-    return moves+1 if new_positions.include?(destination)
-
-    positions = new_positions
-    moves += 1
+    end.uniq
   end
 end
 
