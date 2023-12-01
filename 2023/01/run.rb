@@ -5,8 +5,7 @@ DIGITS_AND_WORDS = DIGITS.merge('one' => 1, 'two' => 2, 'three' => 3, 'four' => 
 
 def to_numbers(s, vocabulary)
   0.upto(s.size - 1).map do |i|
-    matching_word = vocabulary.keys.find { |key| s[i..-1].start_with?(key) }
-    matching_word ? vocabulary[matching_word] : nil
+    vocabulary[vocabulary.keys.find { |key| s[i..-1].start_with?(key) }]
   end.compact
 end
 
