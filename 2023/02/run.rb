@@ -17,15 +17,12 @@ lines.each do |line|
     'green' => 0,
     'blue' => 0
   }
-  game_is_possible = true
-  rounds.split(';').each do |round_1|
-    round_1.split(',').map(&:strip).each do |inner_round|
-      inner_round =~ /^(\d+) (.*)$/
-      number, color = $1.to_i, $2
-      min_required[color] = [number, min_required[color]].max
-      game_is_possible &&= max[color] >= number
-    end
+  rounds.split(/;|,/).map(&:strip).each do |round|
+    round =~ /^(\d+) (.*)$/
+    number, color = $1.to_i, $2
+    min_required[color] = [number, min_required[color]].max
   end
+  game_is_possible = max.keys.all? {|key| max[key] >= min_required[key]}
   part_1 += game_id if game_is_possible
   part_2 += min_required.values.reduce(&:*)
 end
