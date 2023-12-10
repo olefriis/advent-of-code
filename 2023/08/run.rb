@@ -29,5 +29,5 @@ end
 puts "Part 1: #{solve('AAA') {|p| p == 'ZZZ'}}"
 
 positions = PATHS.keys.select {|p| p.end_with?('A')}
-part2 = positions.map {|p| solve(p) {|p| p.end_with?('Z')}}.inject {|a, b| a.lcm(b)}
+part2 = positions.map {|p| solve(p) {|p| p.end_with?('Z')}}.inject(&:lcm)
 puts "Part 2: #{part2}"
