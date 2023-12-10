@@ -33,8 +33,8 @@ def create_expanded_map
 end
 
 def plot_between(expanded_map, x1, y1, x2, y2)
-  start_x, end_x = [x1*2, x2*2].minmax
-  start_y, end_y = [y1*2, y2*2].minmax
+  start_x, end_x = [x1, x2].minmax
+  start_y, end_y = [y1, y2].minmax
 
   while start_x != end_x
     expanded_map[start_y][start_x] = 'X'
@@ -79,12 +79,11 @@ def shrink_map(expanded_map)
   result
 end
 
-def count_empty(map)
+def count_empty_slots(map)
   map.map {|line| line.count(' ')}.sum
 end
 
 def find_loop(start_x, start_y)
-  expanded_map = create_expanded_map
   previous_x, previous_y = start_x, start_y
   possible_new_positions = inout_of_pipe(start_x, start_y)
 
@@ -93,8 +92,7 @@ def find_loop(start_x, start_y)
   return nil unless valid_start
   
   x, y = possible_new_positions.first
-  plot_between(expanded_map, start_x, start_y, x, y)
-  length = 1 # We already moved one step
+  result = [[x, y]]
   while [x, y] != [start_x, start_y]
     raise "x is out of range" if x < 0 || x >= PIPES[0].length
     raise "y is out of range" if y < 0 || y >= PIPES.length
@@ -116,26 +114,38 @@ def find_loop(start_x, start_y)
 
     previous_x, previous_y = x, y
     x, y = possible_new_positions.first
-    plot_between(expanded_map, previous_x, previous_y, x, y)
-    
-    length += 1
+    result << [x, y]
   end
 
-  [length, expanded_map]
+  result
 end
 
+# Find the starting position
 line_with_start_position = PIPES.find {|line| line.include?('S')}
 start_y = PIPES.index(line_with_start_position)
 start_x = line_with_start_position.index('S')
 
-results = (PIPE_DIRECTIONS.keys - ['.']).map do |start_suggestion|
+# Try out all possible values for S
+loops = (PIPE_DIRECTIONS.keys - ['.']).map do |start_suggestion|
   PIPES[start_y][start_x] = start_suggestion
   find_loop(start_x, start_y)
 end.compact
 
-length, expanded_map = results.first
-puts "Part 1: #{length / 2}"
+working_loop = loops.first
+puts "Part 2: #{working_loop.length / 2}"
 
+# To find out the enclosed area, we magnify create a magnified map (x2) and
+# plot the loop there, so that it's possible to squeeze through two pipes
+# (as they are now separated by one empty space).
+#
+# Then we "flood fill" the map from the outside, shrink the map back to the
+# size of the input, and count the number of empty spaces.
+expanded_map = create_expanded_map
+working_loop.each_cons(2) do |pos1, pos2|
+  plot_between(expanded_map, pos1[0]*2, pos1[1]*2, pos2[0]*2, pos2[1]*2)
+end
+first, last = working_loop.first, working_loop.last
+plot_between(expanded_map, last[0]*2, last[1]*2, first[0]*2, first[1]*2)
 flood_map(expanded_map)
 shrunk_map = shrink_map(expanded_map)
-puts "Part 2: #{count_empty(shrunk_map)}"
+puts "Part 2: #{count_empty_slots(shrunk_map)}"
