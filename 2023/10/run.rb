@@ -1,4 +1,4 @@
-pipes = File.readlines('10/input').map(&:strip).map(&:chars)
+PIPES = File.readlines('10/input').map(&:strip).map(&:chars)
 
 NORTH = [0, -1]
 SOUTH = [0, 1]
@@ -15,21 +15,21 @@ PIPE_DIRECTIONS = {
   '.' => []              # is ground; there is no pipe in this tile.
 }
 
-start_x, start_y = 0
-# Find starting position
-pipes.each_with_index do |line, idx|
-  start_y = idx
-  start_x = line.index('S')
-  break if start_x
-end
-
-def inout_of_pipe(pipes, x, y)
-  pipe = pipes[y][x]
+def inout_of_pipe(x, y)
+  pipe = PIPES[y][x]
   PIPE_DIRECTIONS[pipe].map do |d|
     [x + d[0], y + d[1]]
   end.select do |x, y|
-    x >= 0 && x < pipes[0].length && y >= 0 && y < pipes.length
+    x >= 0 && x < PIPES[0].length && y >= 0 && y < PIPES.length
   end
+end
+
+def create_expanded_map
+  result = []
+  PIPES.each do |line|
+    2.times { result << " " * (line.length * 2) }
+  end
+  result
 end
 
 def plot_between(expanded_map, x1, y1, x2, y2)
@@ -50,26 +50,26 @@ def plot_between(expanded_map, x1, y1, x2, y2)
 end
 
 def flood_map(expanded_map)
-  next_floods = Set.new
-  next_floods << [0, 0]
-  while !next_floods.empty?
-    next_next_floods = Set.new
-    next_floods.each do |x, y|
+  edge = [[0, 0]].to_set
+  while !edge.empty?
+    next_edge = Set.new
+    edge.each do |x, y|
       expanded_map[y][x] = '*'
 
-      [ [x-1, y], [x, y-1], [x, y+1], [x+1, y] ].each do |x2, y2|
-        if x2 >= 0 && x2 < expanded_map[0].length && y2 >= 0 && y2 < expanded_map.length && expanded_map[y2][x2] == ' '
-          next_next_floods << [x2, y2]
-        end
+      [ [x-1, y], [x, y-1], [x, y+1], [x+1, y] ].select do |x2, y2|
+        x2 >= 0 && x2 < expanded_map[0].length && y2 >= 0 && y2 < expanded_map.length && expanded_map[y2][x2] == ' '
+      end.each do |x2, y2|
+        next_edge << [x2, y2]
       end
     end
-    next_floods = next_next_floods
+
+    edge = next_edge
   end
 end
 
-def shrink_map(pipes, expanded_map)
+def shrink_map(expanded_map)
   result = []
-  pipes.each_with_index do |line, y|
+  PIPES.each_with_index do |line, y|
     l = []
     line.each_with_index do |pipe, x|
       l << expanded_map[y*2][x*2]
@@ -83,35 +83,25 @@ def count_empty(map)
   map.map {|line| line.count(' ')}.sum
 end
 
-def length_of_loop(pipes, start_x, start_y)
-  expanded_map = []
-  pipes.each do |line|
-    expanded_map << " " * (line.length * 2)
-    expanded_map << " " * (line.length * 2)
-  end
-
-  length = 0
+def find_loop(start_x, start_y)
+  expanded_map = create_expanded_map
   previous_x, previous_y = start_x, start_y
-  possible_new_positions = inout_of_pipe(pipes, start_x, start_y)
+  possible_new_positions = inout_of_pipe(start_x, start_y)
+
   # Return quickly if our start pipe ends up at incompatible neighbours
-  invalid_start= possible_new_positions.any? do |x, y|
-    !inout_of_pipe(pipes, x, y).include?([start_x, start_y])
-  end
-  return nil if invalid_start
+  valid_start = possible_new_positions.all? {|x, y| inout_of_pipe(x, y).include?([start_x, start_y])}
+  return nil unless valid_start
   
-  x = possible_new_positions.first[0]
-  y = possible_new_positions.first[1]
-
+  x, y = possible_new_positions.first
   plot_between(expanded_map, start_x, start_y, x, y)
-  length += 1
-  while x != start_x || y != start_y
-    raise "x is out of range" if x < 0 || x >= pipes[0].length
-    raise "y is out of range" if y < 0 || y >= pipes.length
+  length = 1 # We already moved one step
+  while [x, y] != [start_x, start_y]
+    raise "x is out of range" if x < 0 || x >= PIPES[0].length
+    raise "y is out of range" if y < 0 || y >= PIPES.length
 
-    possible_new_positions = inout_of_pipe(pipes, x, y)
-    possible_new_positions.delete([previous_x, previous_y])
+    possible_new_positions = inout_of_pipe(x, y) - [[previous_x, previous_y]]
     if possible_new_positions.empty?
-      puts "Giving up - length #{length}"
+      puts "Dead end - length #{length}"
       return nil
     elsif possible_new_positions.length > 1
       raise "Too many possible new positions: #{possible_new_positions.inspect}"
@@ -119,7 +109,7 @@ def length_of_loop(pipes, start_x, start_y)
 
     # Now we have to check that we're allowed to enter the new position
     new_position = possible_new_positions.first
-    if !inout_of_pipe(pipes, new_position[0], new_position[1]).include?([x, y])
+    if !inout_of_pipe(new_position[0], new_position[1]).include?([x, y])
       puts "Cannot enter #{new_position.inspect} from #{x},#{y}"
       return nil
     end
@@ -134,17 +124,18 @@ def length_of_loop(pipes, start_x, start_y)
   [length, expanded_map]
 end
 
-# Try out each of the possible values at S
-(PIPE_DIRECTIONS.keys - ['.']).each do |start_suggestion|
-  pipes[start_y][start_x] = start_suggestion
-  length, expanded_map = length_of_loop(pipes, start_x, start_y)
-  if length
-    puts "Part 1: #{length / 2}"
+line_with_start_position = PIPES.find {|line| line.include?('S')}
+start_y = PIPES.index(line_with_start_position)
+start_x = line_with_start_position.index('S')
 
-    flood_map(expanded_map)
-    shrunk_map = shrink_map(pipes, expanded_map)
+results = (PIPE_DIRECTIONS.keys - ['.']).map do |start_suggestion|
+  PIPES[start_y][start_x] = start_suggestion
+  find_loop(start_x, start_y)
+end.compact
 
-    puts "Part 2: #{count_empty(shrunk_map)}"
-    break
-  end
-end
+length, expanded_map = results.first
+puts "Part 1: #{length / 2}"
+
+flood_map(expanded_map)
+shrunk_map = shrink_map(expanded_map)
+puts "Part 2: #{count_empty(shrunk_map)}"
