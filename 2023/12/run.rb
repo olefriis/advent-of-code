@@ -1,86 +1,54 @@
 lines = File.readlines('12/input').map(&:strip)
 
-ACCUMULATOR = {}
-
-def possibilities(conditions, groups)
-  answer = ACCUMULATOR["#{conditions.length}-#{groups.length}"]
-  return answer if answer
+def solve(conditions, groups, result_cache = {})
+  if answer = result_cache["#{conditions.length}-#{groups.length}"]
+    return answer
+  end
 
   required_remaining_conditions = (groups.size-1) + groups.sum
-  if conditions.length < required_remaining_conditions
-    # puts "Not enough conditions: #{conditions} - #{groups}"
-    return 0
-  end
-  if groups.empty? && conditions.all? {|c| c == '.' || c == '?'}
-    # puts 'Done'
-    return 1
-  end
+  return 0 if conditions.length < required_remaining_conditions
+  return 1 if groups.empty? && conditions.all? {|c| c == '.' || c == '?'}
 
   if conditions[0] == '?'
-    # puts "Found ?: #{conditions} - #{groups}"
+    # Try out both possibilities
     conditions[0] = '#'
-    p1 = possibilities(conditions, groups)
+    p1 = solve(conditions, groups, result_cache)
     conditions[0] = '.'
-    p2 = possibilities(conditions, groups)
+    p2 = solve(conditions, groups, result_cache)
+    # ...and put back the ? so we don't mess up other calculations
     conditions[0] = '?'
-    ACCUMULATOR["#{conditions.length}-#{groups.length}"] = p1 + p2
+    result_cache["#{conditions.length}-#{groups.length}"] = p1 + p2
     return p1 + p2
-  end
+  elsif conditions[0] == '.'
+    solve(conditions[1..-1], groups, result_cache) 
+  elsif conditions[0] == '#'
+    return 0 if groups.empty? # We need a group, but don't have one
 
-  if conditions[0] == '.'
-    # puts "Relaying"
-    return possibilities(conditions[1..-1], groups)
-  end
-
-  if conditions[0] == '#'
-    # puts "Entering group: #{conditions} - #{groups}"
-    if groups.empty?
-      # puts "Oh, but we're out of groups"
-      return 0
-    end
     # Gotta use the next group
     group = groups[0]
-    if conditions[0...group].all? {|c| c == '?' || c == '#'}
-      # puts "We should use at least #{group} conditions"
-      if conditions[group] == '#'
-        # puts "Not gonna work - we need a longer group"
-        return 0
-      end
-      new_conditions = group+1 > conditions.length ? [] : conditions[(group+1)..-1]
-      # puts "Length of conditions: #{conditions.length}. Group length: #{groups.length}"
-      # puts "Continuing with #{new_conditions.inspect} - #{groups[1..-1]}. Conditions is #{conditions}"
-      return possibilities(new_conditions, groups[1..-1])
-    else
-      # puts "Group is too small - we need #{groups[0]} conditions: #{conditions} - #{groups}"
-      return 0
-    end
+    return 0 unless conditions[0...group].all? {|c| c == '?' || c == '#'}
+  
+    # If the group is followed by a #, the group is too small, hence we have no match
+    return 0 if conditions.length >= group && conditions[group] == '#'
+  
+    remaining_conditions = group >= conditions.length ? [] : conditions[(group+1)..-1]
+    solve(remaining_conditions, groups[1..-1], result_cache)
   else
-    # puts "Unknown condition: #{conditions} - #{groups}"
+    raise "Unexpected condition: #{conditions} - #{groups}"
   end
-  0
 end
 
 input = lines.map do |line|
   conditions, groups = line.split(' ')
   [conditions.chars, groups.split(',').map(&:to_i)]
 end
-
-ps = input.map do |input|
-  ACCUMULATOR.clear
-  possibilities(input[0], input[1])
-end
+ps = input.map { |i| solve(*i) }
 puts "Part 1: #{ps.sum}"
 
 input2 = input.map do |i|
   conditions = i[0] + ['?'] + i[0] + ['?'] + i[0] + ['?'] + i[0] + ['?'] + i[0]
-  groups = i[1] + i[1] + i[1] + i[1] + i[1]
+  groups = i[1]*5
   [conditions, groups]
 end
-ps2 = input2.map do |i|
-  ACCUMULATOR.clear
-  possibilities(i[0], i[1])
-end
-
-first_ps = possibilities(input2[0][0], input2[0][1])
-
+ps2 = input2.map { |i| solve(*i) }
 puts "Part 2: #{ps2.sum}"
