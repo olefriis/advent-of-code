@@ -2,7 +2,7 @@ groups = File.read("13/input").split("\n\n").map {|group| group.split("\n").map(
 
 def transpose(lines)
   result = []
-  (lines[0].length).times { result << [] }
+  lines[0].length.times { result << [] }
   lines.each do |line|
     line.each_with_index do |char, i|
       result[i] << char
@@ -13,19 +13,11 @@ end
 
 def solve(lines)
   results = []
-  i = 0
-  while i < lines.length-1
+  (lines.length-1).times do |i|
     upper = lines[0..i].reverse
     lower = lines[i+1..-1]
     to_compare = [upper.length, lower.length].min
-    match = true
-    0.upto(to_compare-1) do |j|
-      if upper[j] != lower[j]
-        match = false
-      end
-    end
-    results << i+1 if match
-    i += 1
+    results << i+1 if (0...to_compare).all? { |j| upper[j] == lower[j] }
   end
   results
 end
@@ -35,7 +27,6 @@ def solve_2(lines)
   lines.length.times do |y|
     lines[y].length.times do |x|
       previous_value = lines[y][x]
-      next unless ['.', '#'].include?(previous_value)
       new_value = {'.' => '#', '#' => '.'}[previous_value]
       lines[y][x] = new_value
       new_solutions = solve(lines) - old_solutions
