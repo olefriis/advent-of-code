@@ -30,40 +30,29 @@ def solve(lines)
   results
 end
 
-def value(lines)
-  (solve(transpose(lines)).first || 0) + 100 * (solve(lines).first || 0)
-end
-
 def solve_2(lines)
+  old_solutions = solve(lines)
   lines.length.times do |y|
     lines[y].length.times do |x|
       previous_value = lines[y][x]
-      if !['.', '#'].include?(previous_value)
-        next
-      end
+      next unless ['.', '#'].include?(previous_value)
       new_value = {'.' => '#', '#' => '.'}[previous_value]
       lines[y][x] = new_value
-      solve(lines).each do |result|
-        if result > 0
-          covered_lines = [result, lines.length - result].min
-          if y >= result-covered_lines && y < result + covered_lines
-            lines[y][x] = previous_value
-            return result
-          end
-        end
-      end
+      new_solutions = solve(lines) - old_solutions
       lines[y][x] = previous_value
+
+      return new_solutions[0] if new_solutions.length > 0
     end
   end
   0
 end
 
+def value(lines)
+  solve(transpose(lines)).fetch(0, 0) + 100 * (solve(lines).fetch(0, 0))
+end
+
 def value_2(lines)
-  v1 = solve_2(transpose(lines))
-  v2 = solve_2(lines)
-  raise "Too many results" if v1 != 0 && v2 != 0
-  raise "No results" if v1 == 0 && v2 == 0
-  v1 + 100 * v2
+  solve_2(transpose(lines)) + 100 * solve_2(lines)
 end
 
 puts "Part 1: #{groups.map {|g| value(g)}.sum}"
