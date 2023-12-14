@@ -1,52 +1,41 @@
 lines = File.readlines("14/input").map(&:strip).map(&:chars)
 
-def move_north(lines)
-  moved = true
-  while moved
-    moved = false
-    1.upto(lines.length-1) do |y|
-      lines[y].each_with_index do |char, x|
-        if lines[y][x] == 'O' && lines[y-1][x] == '.'
-          lines[y][x] = '.'
-          lines[y-1][x] = 'O'
-          moved = true
+# Wrap a border of #s around the map
+lines = lines.map { |line| ['#'] + line + ['#'] }
+lines = [['#'] * lines[0].length] + lines + [['#'] * lines[0].length]
+
+NORTH = [0, -1]
+SOUTH = [0, 1]
+WEST = [-1, 0]
+EAST = [1, 0]
+
+def within_bounds(lines, x, y)
+  x >= 0 && y >= 0 && x < lines[0].length && y < lines.length
+end
+
+def move(lines, direction)
+  lines.each_with_index do |line, y|
+    line.each_with_index do |char, x|
+      if char == '#'
+        # Go on a straight line opposite the direction we want to move rocks. Stop at
+        # the next #, move all rocks next to the current #.
+
+        # Start by removing all rocks in the way, counting them as we go along
+        rocks_to_move = 0
+        x1, y1 = x - direction[0], y - direction[1]
+        while within_bounds(lines, x1, y1) && lines[y1][x1] != '#'
+          if lines[y1][x1] == 'O'
+            rocks_to_move += 1
+            lines[y1][x1] = '.'
+          end
+          x1, y1 = x1 - direction[0], y1 - direction[1]
         end
-      end
-    end
-  end
-  lines
-end
 
-def move_south(lines)
-  move_north(lines.reverse).reverse
-end
-
-def move_west(lines)
-  moved = true
-  while moved
-    moved = false
-    1.upto(lines[0].length-1) do |x|
-      lines.each_with_index do |char, y|
-        if lines[y][x] == 'O' && lines[y][x-1] == '.'
-          lines[y][x] = '.'
-          lines[y][x-1] = 'O'
-          moved = true
-        end
-      end
-    end
-  end
-end
-
-def move_east(lines)
-  moved = true
-  while moved
-    moved = false
-    0.upto(lines[0].length-2) do |x|
-      lines.each_with_index do |char, y|
-        if lines[y][x] == 'O' && lines[y][x+1] == '.'
-          lines[y][x] = '.'
-          lines[y][x+1] = 'O'
-          moved = true
+        # Then put them back right next to the # rock
+        x1, y1 = x - direction[0], y - direction[1]
+        rocks_to_move.times do
+          lines[y1][x1] = 'O'
+          x1, y1 = x1 - direction[0], y1 - direction[1]
         end
       end
     end
@@ -56,51 +45,45 @@ end
 def load(lines)
   result = 0
   lines.each_with_index do |line, y|
-    rocks = line.count { |char| char == 'O' }
-    multiplier = lines.length - y
+    rocks = line.count('O')
+    # -1 because of the surrounding border we've added
+    multiplier = lines.length - y - 1
     result += rocks * multiplier
   end
   result
 end
 
 def move_all(lines)
-  move_north(lines)
-  move_west(lines)
-  move_south(lines)
-  move_east(lines)
+  move(lines, NORTH)
+  move(lines, WEST)
+  move(lines, SOUTH)
+  move(lines, EAST)
 end
 
 lines_part_1 = lines.dup
-move_north(lines_part_1)
+move(lines_part_1, NORTH)
 puts "Part 1: #{load(lines_part_1)}"
 
+# Find the start and length of the cycle
 cache = {}
-
-# Populate our cache
-i = 0
-cycle_start = 0
-while i < 1000000000
+total_iterations = 1000000000
+i, cycle_start = 0
+loop do
   move_all(lines)
   i += 1
   key = lines.map(&:join).join
   cycle_start = cache[key]
-  if cycle_start
-    puts "Got a previous one: Currently at #{i}, this one is #{cycle_start}"
-    break
-  else
-    cache[key] = i
-  end
+  break if cycle_start
+
+  cache[key] = i
 end
 
-cycle_length = i - cycle_start
-bumped_times = (1000000000 - cycle_start) / cycle_length
-puts "Can bump #{bumped_times} times to get to #{cycle_start + bumped_times * cycle_length}"
-i = cycle_start + bumped_times * cycle_length
-while i < 1000000000
-  puts i
-  move_all(lines)
-  key = lines.map(&:join).join
-  i += 1
-end
+# Jump as many cycles as possible without going over the total number of iterations,
+# then do the remaining iterations.
+cycle_end = i
+cycle_length = cycle_end - cycle_start
+cycles_to_add = (total_iterations - cycle_start) / cycle_length
+i = cycle_start + cycles_to_add * cycle_length
+(total_iterations - i).times { move_all(lines) }
 
 puts "Part 2: #{load(lines)}"
