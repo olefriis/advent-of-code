@@ -1,4 +1,3 @@
-require 'pry'
 input = File.readlines("15/input").map(&:strip).join
 
 groups = input.split(',')
@@ -15,9 +14,6 @@ end
 
 part1 = groups.map { |group| h(group) }.sum
 puts "Part 1: #{part1}"
-
-boxes = []
-256.times { boxes << [] }
 
 def perform(group, boxes)
   if group.end_with?('-')
@@ -40,16 +36,15 @@ def perform(group, boxes)
   end
 end
 
+boxes = 256.times.map { [] }
 groups.each { |group| perform(group, boxes) }
-part2 = 0
-boxes.each_with_index do |box, index|
-  if box.length > 0
-    box.each_with_index do |contents, index2|
-      focal_length = contents[1]
-      contribution = (index+1) * focal_length * (index2+1)
-      part2 += contribution
-    end
-  end
-end
+
+part2 = boxes.each_with_index.map do |box, index|
+  box.each_with_index.map do |contents, index2|
+    focal_length = contents[1]
+    contribution = (index+1) * focal_length * (index2+1)
+    contribution
+  end.sum
+end.sum
 
 puts "Part 2: #{part2}"
