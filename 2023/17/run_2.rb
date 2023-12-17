@@ -49,7 +49,7 @@ def solve(grid, min_consecutive_steps, max_consecutive_steps)
     current_heat_loss, item = queue.pop
     pos, state = item
 
-    return current_heat_loss if pos.x == width - 1 && pos.y == height - 1
+    return current_heat_loss if pos.x == width - 1 && pos.y == height - 1 && state.consecutive_steps >= min_consecutive_steps
 
     [UP, DOWN, LEFT, RIGHT].each do |direction|
       next if state.direction == direction && state.consecutive_steps == max_consecutive_steps

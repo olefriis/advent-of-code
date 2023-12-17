@@ -52,7 +52,10 @@ def solve(grid, min_consecutive_steps, max_consecutive_steps)
     edge = new_edge
   end
 
-  lowest_heat_state_map[Pos.new(grid[0].length - 1, grid.length - 1)].values.min
+  lowest_heat_state_map[Pos.new(grid[0].length - 1, grid.length - 1)].
+    select { |state, _value| state.consecutive_steps >= min_consecutive_steps }.
+    values.
+    min
 end
 
 grid = File.readlines("17/input").map(&:strip).map(&:chars).map { |row| row.map(&:to_i) }
