@@ -1,3 +1,6 @@
+# My first, rather unelegang solution: Shrink the grid to a smaller size, do floodfill, then count
+# the non-filled positions, taking into account their original size.
+
 lines = File.readlines("18/input").map(&:strip)
 
 grid = Set.new
