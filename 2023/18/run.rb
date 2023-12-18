@@ -1,12 +1,5 @@
 lines = File.readlines("18/input").map(&:strip)
 
-DIRECTIONS = {
-  'U' => [0, -1],
-  'D' => [0, 1],
-  'L' => [-1, 0],
-  'R' => [1, 0]
-}
-
 Segment = Struct.new(:x1, :y1, :x2, :y2) do
   def direction
     x1 == x2 ? :vertical : :horizontal
