@@ -1,10 +1,6 @@
 # This is a VERY nice solution, using the shoelace formula to calculate the area of a polygon.
 # See https://artofproblemsolving.com/wiki/index.php/Shoelace_Theorem
 
-lines = File.readlines("18/input").map(&:strip)
-
-Segment = Struct.new(:x1, :y1, :x2, :y2)
-
 def solve(commands)
   px = py = 0
   border = 1
@@ -33,6 +29,8 @@ def solve(commands)
 
   area.abs / 2 + border
 end
+
+lines = File.readlines("18/input").map(&:strip)
 
 commands_part1 = lines.map do |line|
   direction, amount, color = line.split(' ')
