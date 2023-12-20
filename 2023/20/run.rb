@@ -91,6 +91,7 @@ def process_input(m)
     state_before = m.state.dup
     m.inputs.each_with_index do |input, i|
       m.state[i] = input if input
+      CONJUNCTION_CYCLE_COUNTS[i] ||= CYCLE_COUNT[0] if name == NAME_OF_NEXT_TO_LAST_NODE && input == :high
     end
     output = m.state.all?(:high) ? :low : :high
     add_output(name, output)
@@ -139,20 +140,32 @@ def run_cycle
       raise "Invalid pulse: #{pulse}"
     end
   end
-  puts "Finished after delivering #{low_pulses_forwarded} low pulses and #{high_pulses_forwarded} high pulses}"
   [low_pulses_forwarded, high_pulses_forwarded]
 end
 
-puts '******'
+# For part 2, the 'rx' node gets its input from a conjunction node. If we watch the inputs from that
+# conjunction node and find the cycles between each of the inputs turning "high", we can find the
+# number of iterations required to get all the inputs to "high" at the same time.
+rx = MODULES['rx']
+NAME_OF_NEXT_TO_LAST_NODE = MODULES.find { |name, m| m.destinations == [[rx, 0]] }.first
+CONJUNCTION_CYCLE_COUNTS = MODULES[NAME_OF_NEXT_TO_LAST_NODE].state.map { nil }
+
+CYCLE_COUNT = [0] # Hack...
+
 low_pulses_forwarded = high_pulses_forwarded = 0
 1000.times do
   low_forwarded, high_forwarded = run_cycle
   low_pulses_forwarded += low_forwarded
   high_pulses_forwarded += high_forwarded
 end
-
-#puts "Low pulses forwarded: #{low_pulses_forwarded}"
-#puts "High pulses forwarded: #{high_pulses_forwarded}"
 puts "Part 1: #{low_pulses_forwarded * high_pulses_forwarded}"
 
-# Too low: 696481940
+CYCLE_COUNT[0] = 1001
+loop do
+  run_cycle
+  if CONJUNCTION_CYCLE_COUNTS.all?
+    puts "Part 2: #{CONJUNCTION_CYCLE_COUNTS.inject(&:lcm)}"
+    break
+  end
+  CYCLE_COUNT[0] += 1
+end
