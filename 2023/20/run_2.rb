@@ -1,3 +1,4 @@
+require 'pry'
 input = File.readlines("20/input").map(&:strip)
 
 Mod = Struct.new(:type, :state, :inputs, :output, :destinations)
@@ -62,11 +63,7 @@ end
 
 PULSES_TO_PROCESS = []
 CYCLE_NUMBER = [0]
-CYCLE_COUNTS = {}
-MODULES.each do |name, m|
-  next if m.type != :conjunction || name == 'ql'
-  CYCLE_COUNTS[name] = nil
-end
+QL_CYCLE_COUNTS = [nil, nil, nil, nil]
 
 def add_output(name, pulse)
   m = MODULES[name]
@@ -95,11 +92,9 @@ def process_input(m)
     state_before = m.state.dup
     m.inputs.each_with_index do |input, i|
       m.state[i] = input if input
+      QL_CYCLE_COUNTS[i] ||= CYCLE_NUMBER[0] if name == 'ql' && input == :high
     end
     output = m.state.all?(:high) ? :low : :high
-    if output == :low && name != 'ql'
-      CYCLE_COUNTS[name] ||= CYCLE_NUMBER[0]
-    end
     add_output(name, output)
     m.inputs.length.times do |i|
       m.inputs[i] = nil
@@ -143,8 +138,8 @@ loop do
   puts cycle if cycle % 1000 == 0
   run_cycle
 
-  if CYCLE_COUNTS.values.all? {|v| v && v > 0}
-    puts "Part 2: #{CYCLE_COUNTS.values.inject(&:lcm)}"
+  if QL_CYCLE_COUNTS.all?
+    puts "Part 2: #{QL_CYCLE_COUNTS.inject(&:lcm)}"
     exit
   end
 end
