@@ -1,14 +1,6 @@
-require 'pry'
 input = File.readlines("20/input").map(&:strip)
 
 Mod = Struct.new(:type, :state, :inputs, :output, :destinations)
-
-input_connections = {} # For each module, an ordered list of names of the input modules
-MODULES = {}
-
-def debug?
-  false
-end
 
 def name_of_module(m)
   MODULES.each do |name, mod|
@@ -16,12 +8,13 @@ def name_of_module(m)
   end
 end
 
+MODULES = {}
+input_connections = {} # For each module, an ordered list of names of the input modules
+
 input.each do |line|
   line =~ /^(.*) -> (.*)$/ or raise "Invalid line: #{line}"
   name_and_type, destinations = $1, $2.split(',').map(&:strip)
-  name = nil
-  type = nil
-  m = nil
+  name = type = m = nil
   if name_and_type == 'broadcaster'
     name, type, state = 'broadcaster', :broadcaster, :high
   elsif name_and_type.start_with?('%')
@@ -63,27 +56,20 @@ end
 
 PULSES_TO_PROCESS = []
 
-def add_output(name, pulse)
-  m = MODULES[name]
-  PULSES_TO_PROCESS << [name, pulse]
-end
-
 def process_input(m)
-  #puts "Processing input for #{name_of_module(m)}"
   name = name_of_module(m)
   case m.type
   when :output
     m.state = m.inputs
-    puts "Output #{name} state #{m.state}" if debug?
     m.inputs = nil
   when :broadcaster
-    add_output(name, m.inputs)
+    PULSES_TO_PROCESS << [name, m.inputs]
     m.inputs = nil
   when :flip_flop
     if m.inputs == :low
       m.state = {:on => :off, :off => :on}[m.state]
       output = {:on => :high, :off => :low}[m.state]
-      add_output(name, output)
+      PULSES_TO_PROCESS << [name, output]
     end
     m.inputs = nil
   when :conjunction
@@ -94,7 +80,7 @@ def process_input(m)
       CONJUNCTION_CYCLE_COUNTS[i] ||= CYCLE_COUNT[0] if name == NAME_OF_NEXT_TO_LAST_NODE && input == :high
     end
     output = m.state.all?(:high) ? :low : :high
-    add_output(name, output)
+    PULSES_TO_PROCESS << [name, output]
     m.inputs.length.times do |i|
       m.inputs[i] = nil
     end
@@ -107,14 +93,9 @@ def propagate_pulse(source_and_type)
   source_name, pulse = source_and_type
   source_module = MODULES[source_name]
 
-  binding.pry if source_module == nil
   source_module.destinations.each do |destination, i|
-    puts "#{source_name} -#{pulse}-> #{name_of_module(destination)} #{destination.type}" if debug?
-
     case destination.type
-    when :output
-      destination.inputs = pulse
-    when :flip_flop
+    when :output, :flip_flop
       destination.inputs = pulse
     when :conjunction
       destination.inputs[i] = pulse
@@ -149,7 +130,6 @@ end
 rx = MODULES['rx']
 NAME_OF_NEXT_TO_LAST_NODE = MODULES.find { |name, m| m.destinations == [[rx, 0]] }.first
 CONJUNCTION_CYCLE_COUNTS = MODULES[NAME_OF_NEXT_TO_LAST_NODE].state.map { nil }
-
 CYCLE_COUNT = [0] # Hack...
 
 low_pulses_forwarded = high_pulses_forwarded = 0
