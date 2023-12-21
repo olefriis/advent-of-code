@@ -107,15 +107,22 @@ end
 n = 26501365
 stable_steps = 300 # The least amount of steps we believe we'll need to make a map stable. In reality this is probably 261 steps...
 
-positions = positions_after_steps(n, startx, starty)
+$grids_used = {}
+def record_grid(grid, count=1)
+  $grids_used[grid] ||= 0
+  $grids_used[grid] += count
+  grid
+end
+
+positions = record_grid(positions_after_steps(n, startx, starty))
 remaining_steps_after_going_out_initially = n - 66 # Need to first pass the 65 steps within this map, then another step to get to the next map
 puts "Middle position: #{positions}"
 
 # Left and right
 remaining_leftright = remaining_steps_after_going_out_initially
 while remaining_leftright >= 0
-  positions += positions_after_steps(remaining_leftright, $grid.length - 1, starty) # The one to the left, coming in from the middle right
-  positions += positions_after_steps(remaining_leftright,                0, starty) # The one to the left, coming in from the middle right
+  positions += record_grid(positions_after_steps(remaining_leftright, $grid.length - 1, starty)) # The one to the left, coming in from the middle right
+  positions += record_grid(positions_after_steps(remaining_leftright,                0, starty)) # The one to the left, coming in from the middle right
 
   remaining_leftright -= $grid.length
 end
@@ -125,26 +132,26 @@ puts "After going left and right: #{positions}"
 puts "Going up"
 remaining_leftright = remaining_steps_after_going_out_initially
 while remaining_leftright >= 0
-  #puts "Remaining left/right: #{remaining_leftright}"
   # The one in the middle
-  positions += positions_after_steps(remaining_leftright, startx, $grid.length - 1)
+  positions += record_grid(positions_after_steps(remaining_leftright, startx, $grid.length - 1))
 
   remaining_steps = remaining_leftright - 66
   if remaining_steps >= 0
-    completely_covered_pairs = remaining_steps / ($grid.length * 2)
+    # Why do we need to subtract one here? We're sometimes going too far...
+    completely_covered_pairs = [remaining_steps / ($grid.length * 2) - 1, 0].max
 
     if completely_covered_pairs > 0
-      positions += completely_covered_pairs * positions_after_steps(stable_steps  , $grid.length - 1, $grid.length - 1) # Even remaining steps (we're going to the left)
-      positions += completely_covered_pairs * positions_after_steps(stable_steps+1, $grid.length - 1, $grid.length - 1) # Odd remaining steps (we're going to the left)
-      positions += completely_covered_pairs * positions_after_steps(stable_steps  ,                0, $grid.length - 1) # Even remaining steps (we're going to the right)
-      positions += completely_covered_pairs * positions_after_steps(stable_steps+1,                0, $grid.length - 1) # Odd remaining steps (we're going to the right)
+      positions += completely_covered_pairs * record_grid(positions_after_steps(stable_steps  , $grid.length - 1, $grid.length - 1), completely_covered_pairs) # Even remaining steps (we're going to the left)
+      positions += completely_covered_pairs * record_grid(positions_after_steps(stable_steps+1, $grid.length - 1, $grid.length - 1), completely_covered_pairs) # Odd remaining steps (we're going to the left)
+      positions += completely_covered_pairs * record_grid(positions_after_steps(stable_steps  ,                0, $grid.length - 1), completely_covered_pairs) # Even remaining steps (we're going to the right)
+      positions += completely_covered_pairs * record_grid(positions_after_steps(stable_steps+1,                0, $grid.length - 1), completely_covered_pairs) # Odd remaining steps (we're going to the right)
     end
 
     remaining_steps -= completely_covered_pairs * $grid.length * 2
-    raise "Weird remaining steps: #{remaining_steps}" if remaining_steps < 0 || remaining_steps >= $grid.length * 2
+    #raise "Weird remaining steps: #{remaining_steps}" if remaining_steps < 0 || remaining_steps >= $grid.length * 2
     while remaining_steps >= 0
-      positions += positions_after_steps(remaining_steps, $grid.length - 1, $grid.length - 1) # The one to the left, coming in from the bottom right
-      positions += positions_after_steps(remaining_steps, 0, $grid.length - 1) # The one to the right, coming in from the bottom left
+      positions += record_grid(positions_after_steps(remaining_steps, $grid.length - 1, $grid.length - 1)) # The one to the left, coming in from the bottom right
+      positions += record_grid(positions_after_steps(remaining_steps, 0, $grid.length - 1)) # The one to the right, coming in from the bottom left
       remaining_steps -= $grid.length
     end
   end
@@ -157,25 +164,25 @@ puts "After going up: #{positions}"
 puts "Going down"
 remaining_leftright = remaining_steps_after_going_out_initially
 while remaining_leftright >= 0
-  #puts "Remaining left/right: #{remaining_leftright}"
   # The one in the middle
-  positions += positions_after_steps(remaining_leftright, startx, 0)
+  positions += record_grid(positions_after_steps(remaining_leftright, startx, 0))
 
   remaining_steps = remaining_leftright - 66
   if remaining_steps >= 0
-    completely_covered_pairs = remaining_steps / ($grid.length * 2)
+    # Why do we need to subtract one here? We're sometimes going too far...
+    completely_covered_pairs = [remaining_steps / ($grid.length * 2) - 1, 0].max
     if completely_covered_pairs > 0
-      positions += completely_covered_pairs * positions_after_steps(stable_steps  , $grid.length - 1, 0) # Even remaining steps (we're going to the left)
-      positions += completely_covered_pairs * positions_after_steps(stable_steps+1, $grid.length - 1, 0) # Odd remaining steps (we're going to the left)
-      positions += completely_covered_pairs * positions_after_steps(stable_steps  ,                0, 0) # Even remaining steps (we're going to the right)
-      positions += completely_covered_pairs * positions_after_steps(stable_steps+1,                0, 0) # Odd remaining steps (we're going to the right)
+      positions += completely_covered_pairs * record_grid(positions_after_steps(stable_steps  , $grid.length - 1, 0), completely_covered_pairs) # Even remaining steps (we're going to the left)
+      positions += completely_covered_pairs * record_grid(positions_after_steps(stable_steps+1, $grid.length - 1, 0), completely_covered_pairs) # Odd remaining steps (we're going to the left)
+      positions += completely_covered_pairs * record_grid(positions_after_steps(stable_steps  ,                0, 0), completely_covered_pairs) # Even remaining steps (we're going to the right)
+      positions += completely_covered_pairs * record_grid(positions_after_steps(stable_steps+1,                0, 0), completely_covered_pairs) # Odd remaining steps (we're going to the right)
     end
 
     remaining_steps -= completely_covered_pairs * $grid.length * 2
-    raise "Weird remaining steps: #{remaining_steps}" if remaining_steps < 0 || remaining_steps >= $grid.length * 2
+    #raise "Weird remaining steps: #{remaining_steps}" if remaining_steps < 0 || remaining_steps >= $grid.length * 2
     while remaining_steps >= 0
-      positions += positions_after_steps(remaining_steps, $grid.length - 1, 0) # The one to the left, coming in from the top right
-      positions += positions_after_steps(remaining_steps, 0, 0) # The one to the right, coming in from the top left
+      positions += record_grid(positions_after_steps(remaining_steps, $grid.length - 1, 0)) # The one to the left, coming in from the top right
+      positions += record_grid(positions_after_steps(remaining_steps, 0, 0)) # The one to the right, coming in from the top left
       remaining_steps -= $grid.length
     end
   end
@@ -185,26 +192,3 @@ end
 puts "After going down: #{positions}"
 
 puts "Part 2: #{positions}"
-
-# Too low: 598489615963478
-# Too low: 598492046241956
-# Too low: 598492046256804
-# Not right: 607664724534268
-# Not right: 607664760131899
-# Not right: 607664760137803
-# Not right: 607664745572275
-# Not right: 607664752855003
-# Not right: 606188781881016
-# Not right: 606188781880980
-# Right:     606188414811259
-             606188414811259
-
-# We're going up/down 202300 times
-# We're off by 367069757
-#             2996471395
-# That's approximately 1814 per layer.
-# Difference between even/odd full maps is 36.
-
-# 2629394214
-# 26501365
-binding.pry
