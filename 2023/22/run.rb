@@ -73,6 +73,7 @@ affected_bricks = {}
 
 falling_bricks_counts = bricks.each_with_index.map do |brick, i|
   falling = [brick].to_set
+  seen = falling.dup
   changed = true
   while changed
     changed = false
@@ -82,20 +83,21 @@ falling_bricks_counts = bricks.each_with_index.map do |brick, i|
       # "Supercharge" or iteration. We know that by removing this brick, we will affect all the bricks that are affected by this brick.
       if known_affected
         known_affected.each do |affected_brick|
-          new_falling << affected_brick unless falling.include?(affected_brick)
+          new_falling << affected_brick unless seen.include?(affected_brick)
         end
       end
       falling_brick.supporting.each do |supported_brick|
         # This will also fall if it is only on top of other falling bricks
         #remaining_stable_bricks = supported_brick.on_top_of - falling
-        new_falling << supported_brick if falling.superset?(supported_brick.on_top_of) && !falling.include?(supported_brick)
+        new_falling << supported_brick if seen.superset?(supported_brick.on_top_of) && !seen.include?(supported_brick)
       end
     end
     changed = new_falling.count > 0
-    new_falling.each {|f| falling << f}
+    new_falling.each {|f| seen << f}
+    falling = new_falling
   end
   affected_bricks[brick] = falling
-  falling.count - 1
+  seen.count - 1
 end
 
 puts "Part 2: #{falling_bricks_counts.sum}"
