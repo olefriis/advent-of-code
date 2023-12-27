@@ -3,12 +3,12 @@ input = File.readlines("20/input").map(&:strip)
 Mod = Struct.new(:type, :state, :inputs, :output, :destinations)
 
 def name_of_module(m)
-  MODULES.each do |name, mod|
+  $modules.each do |name, mod|
     return name if m == mod
   end
 end
 
-MODULES = {}
+$modules = {}
 input_connections = {} # For each module, an ordered list of names of the input modules
 
 input.each do |line|
@@ -25,7 +25,7 @@ input.each do |line|
     raise "Invalid name and type: #{name_and_type}"
   end
   m = Mod.new(type, state, nil, :low, [])
-  MODULES[name] = m
+  $modules[name] = m
   destinations.each do |destination|
     input_connections[destination] ||= []
     input_connections[destination] << name
@@ -34,18 +34,18 @@ end
 
 output_modules = []
 input_connections.each do |destination, sources|
-  output_modules << destination unless MODULES[destination]
+  output_modules << destination unless $modules[destination]
 end
 
 output_modules.each do |m|
   puts "Creating output module #{m}"
-  MODULES[m] = Mod.new(:output, nil, nil, nil, [])
+  $modules[m] = Mod.new(:output, nil, nil, nil, [])
 end
 
 input_connections.each do |destination, sources|
-  destination_module = MODULES[destination]
+  destination_module = $modules[destination]
   sources.each_with_index do |source, i|
-    source_module = MODULES[source]
+    source_module = $modules[source]
     source_module.destinations << [destination_module, i]
   end
   if destination_module.type == :conjunction
@@ -54,7 +54,7 @@ input_connections.each do |destination, sources|
   end
 end
 
-PULSES_TO_PROCESS = []
+$pulses_to_process = []
 
 def process_input(m)
   name = name_of_module(m)
@@ -63,13 +63,13 @@ def process_input(m)
     m.state = m.inputs
     m.inputs = nil
   when :broadcaster
-    PULSES_TO_PROCESS << [name, m.inputs]
+    $pulses_to_process << [name, m.inputs]
     m.inputs = nil
   when :flip_flop
     if m.inputs == :low
       m.state = {:on => :off, :off => :on}[m.state]
       output = {:on => :high, :off => :low}[m.state]
-      PULSES_TO_PROCESS << [name, output]
+      $pulses_to_process << [name, output]
     end
     m.inputs = nil
   when :conjunction
@@ -77,10 +77,10 @@ def process_input(m)
     state_before = m.state.dup
     m.inputs.each_with_index do |input, i|
       m.state[i] = input if input
-      CONJUNCTION_CYCLE_COUNTS[i] ||= CYCLE_COUNT[0] if name == NAME_OF_NEXT_TO_LAST_NODE && input == :high
+      $conjunction_cycle_counts[i] ||= $cycle_count if name == $name_of_next_to_last_node && input == :high
     end
     output = m.state.all?(:high) ? :low : :high
-    PULSES_TO_PROCESS << [name, output]
+    $pulses_to_process << [name, output]
     m.inputs.length.times do |i|
       m.inputs[i] = nil
     end
@@ -91,7 +91,7 @@ end
 
 def propagate_pulse(source_and_type)
   source_name, pulse = source_and_type
-  source_module = MODULES[source_name]
+  source_module = $modules[source_name]
 
   source_module.destinations.each do |destination, i|
     case destination.type
@@ -106,11 +106,11 @@ def propagate_pulse(source_and_type)
 end
 
 def run_cycle
-  PULSES_TO_PROCESS << ['broadcaster', :low]
+  $pulses_to_process << ['broadcaster', :low]
   low_pulses_forwarded = 1
   high_pulses_forwarded = 0
-  while PULSES_TO_PROCESS.any?
-    pulse = PULSES_TO_PROCESS.shift
+  while $pulses_to_process.any?
+    pulse = $pulses_to_process.shift
     pulses_propagated = propagate_pulse(pulse)
     case pulse.last
     when :low
@@ -127,10 +127,10 @@ end
 # For part 2, the 'rx' node gets its input from a conjunction node. If we watch the inputs from that
 # conjunction node and find the cycles between each of the inputs turning "high", we can find the
 # number of iterations required to get all the inputs to "high" at the same time.
-rx = MODULES['rx']
-NAME_OF_NEXT_TO_LAST_NODE = MODULES.find { |name, m| m.destinations == [[rx, 0]] }.first
-CONJUNCTION_CYCLE_COUNTS = MODULES[NAME_OF_NEXT_TO_LAST_NODE].state.map { nil }
-CYCLE_COUNT = [0] # Hack...
+rx = $modules['rx']
+$name_of_next_to_last_node = $modules.find { |name, m| m.destinations == [[rx, 0]] }.first
+$conjunction_cycle_counts = $modules[$name_of_next_to_last_node].state.map { nil }
+$cycle_count = 0
 
 low_pulses_forwarded = high_pulses_forwarded = 0
 1000.times do
@@ -140,12 +140,12 @@ low_pulses_forwarded = high_pulses_forwarded = 0
 end
 puts "Part 1: #{low_pulses_forwarded * high_pulses_forwarded}"
 
-CYCLE_COUNT[0] = 1001
+$cycle_count = 1001
 loop do
   run_cycle
-  if CONJUNCTION_CYCLE_COUNTS.all?
-    puts "Part 2: #{CONJUNCTION_CYCLE_COUNTS.inject(&:lcm)}"
+  if $conjunction_cycle_counts.all?
+    puts "Part 2: #{$conjunction_cycle_counts.inject(&:lcm)}"
     break
   end
-  CYCLE_COUNT[0] += 1
+  $cycle_count += 1
 end
