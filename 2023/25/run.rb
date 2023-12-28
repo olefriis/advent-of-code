@@ -30,22 +30,16 @@ def to_path(coming_from, end_component)
   result.reverse
 end
 
-def add_connection(from, to, local_connections)
-  local_connections[from] << to
-  local_connections[to] << from
-end
-
 def remove_connection(from, to, local_connections)
   local_connections[from].delete(to)
   local_connections[to].delete(from)
 end
 
 def eliminate_path(path, local_connections)
-  path.each { |from, to| remove_connection(from, to, local_connections) }
-end
-
-def reinstate_path(path, local_connections)
-  path.each { |from, to| add_connection(from, to, local_connections) }
+  path.each do |from, to|
+    local_connections[from].delete(to)
+    local_connections[to].delete(from)
+  end
 end
 
 def path_between(start_component, end_component, local_connections)
@@ -75,18 +69,6 @@ def path_between(start_component, end_component, local_connections)
   nil
 end
 
-def find_important_parts_of_path(path, start_component, end_component, local_connections)
-  important_parts_of_path = []
-  path.each do |from, to|
-    remove_connection(from, to, local_connections)
-    if !path_between(start_component, end_component, local_connections)
-      important_parts_of_path << [from, to]
-    end
-    add_connection(from, to, local_connections)
-  end
-  important_parts_of_path
-end
-
 def find_most_distant_component(start_component)
   local_connections = deep_dup($connections)
 
@@ -113,7 +95,7 @@ def find_most_distant_component(start_component)
   last_visited_component
 end
 
-def visit(start_component, local_connections)
+def number_of_nodes_reachable_from(start_component, local_connections)
   seen = [start_component].to_set
   queue = [start_component]
   while queue.any?
@@ -129,7 +111,7 @@ def visit(start_component, local_connections)
     queue = new_queue
   end
 
-  seen
+  seen.count
 end
 
 def solve(from, to)
@@ -139,32 +121,13 @@ def solve(from, to)
   path2 = path_between(from, to, connections)
   eliminate_path(path2, connections)
   path3 = path_between(from, to, connections)
-  raise "No path3 found" unless path3
+  eliminate_path(path3, connections)
 
-  important_parts_3 = find_important_parts_of_path(path3, from, to, connections)
-  return false unless important_parts_3.count == 1
-  important_part_3 = important_parts_3.first
-  remove_connection(important_part_3.first, important_part_3.last, connections)
-  reinstate_path(path2, connections)
-
-  important_parts_2 = find_important_parts_of_path(path2, from, to, connections)
-  return false unless important_parts_2.count == 1
-  important_part_2 = important_parts_2.first
-  remove_connection(important_part_2.first, important_part_2.last, connections)
-  reinstate_path(path1, connections)
-
-  important_parts_1 = find_important_parts_of_path(path1, from, to, connections)
-  return false unless important_parts_1.count == 1
-  important_part_1 = important_parts_1.first
-  remove_connection(important_part_1.first, important_part_1.last, connections)
-
-  size1, size2 = visit(from, connections).count, visit(to, connections).count
-  return false if size1 + size2 != $connections.keys.count
-  puts "Solution: #{size1} * #{size2} = #{size1 * size2}"
-  exit
+  [number_of_nodes_reachable_from(from, connections), number_of_nodes_reachable_from(to, connections)]
 end
 
-$connections.keys.each do |from|
-  to = find_most_distant_component(from)
-  solve(from, to)
-end
+from = $connections.keys.first
+to = find_most_distant_component(from)
+size_1, size_2 = solve(from, to)
+
+puts "Part 1: #{size_1 * size_2}"
