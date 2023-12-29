@@ -69,32 +69,6 @@ def path_between(start_component, end_component, local_connections)
   nil
 end
 
-def find_most_distant_component(start_component)
-  local_connections = deep_dup($connections)
-
-  seen = [start_component].to_set
-  queue = [start_component]
-  coming_from = {}
-  last_visited_component = nil
-  while queue.any?
-    new_queue = []
-    queue.each do |component|
-      last_visited_component = component
-      seen << component
-      connections = local_connections[component]
-      connections.each do |other_component|
-        if !seen.include?(other_component)
-          coming_from[other_component] = component
-          new_queue << other_component
-        end
-      end
-    end
-    queue = new_queue
-  end
-
-  last_visited_component
-end
-
 def number_of_nodes_reachable_from(start_component, local_connections)
   seen = [start_component].to_set
   queue = [start_component]
@@ -127,7 +101,10 @@ def solve(from, to)
 end
 
 from = $connections.keys.first
-to = find_most_distant_component(from)
-size_1, size_2 = solve(from, to)
-
-puts "Part 1: #{size_1 * size_2}"
+$connections.keys.each do |to|
+  next if to == from
+  group_size_1, group_size_2 = solve(from, to)
+  next if group_size_1 == $connections.count
+  puts "Part 1: #{group_size_1 * group_size_2}"
+  break
+end
