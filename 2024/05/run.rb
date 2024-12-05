@@ -4,10 +4,10 @@ page_lines = page_lines.lines.map(&:strip).map { |line| line.split(',') }
 
 part_1, part_2 = 0, 0
 page_lines.each do |line|
-    sorted = line.sort do |first_page, last_page|
-        if orders.include?([first_page, last_page])
+    sorted = line.sort do |a, b|
+        if orders.include?([a, b])
             -1
-        elsif orders.include?([last_page, first_page])
+        elsif orders.include?([b, a])
             1
         else
             0
