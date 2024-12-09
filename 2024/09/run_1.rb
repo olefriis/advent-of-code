@@ -1,11 +1,6 @@
 input = File.readlines('09/input').map(&:strip).first.chars.map(&:to_i)
 
-free_spaces = []
-ids_and_sizes = []
-
 layout = []
-
-resulting_layout = []
 
 current_id = 0
 0.upto(input.length / 2) do |i|
@@ -16,8 +11,6 @@ current_id = 0
 
     current_id += 1
 end
-
-#p layout
 
 resulting_layout = []
 
@@ -48,8 +41,7 @@ while layout.count > 0
     end
 end
 
-position = 0
-part_1 = 0
+position, part_1 = 0, 0
 resulting_layout.each do |id, size|
     while size > 0
         part_1 += id * position
@@ -58,5 +50,4 @@ resulting_layout.each do |id, size|
     end
 end
 
-#p resulting_layout
 puts "Part 1: #{part_1}"
