@@ -1,7 +1,5 @@
 map = File.readlines('12/input').map(&:strip).map(&:chars)
 
-handled = Set.new
-
 def neighbours(map, x, y)
     result = []
     result << [x-1, y] if x > 0
@@ -47,53 +45,25 @@ def find_perimeter(map, region)
     result
 end
 
-def eliminate_side(fences, position, direction)
-    fences.delete(position)
+def number_of_sides_in_direction(region, direction)
+    # Start by "throwing fences" in the direction given. Avoid putting fences on top of the region itself.
+    fences = region.map { |x, y| [neighbour_x = x + direction[0], neighbour_y = y + direction[1]] } - region.to_a
 
-    # Go in one direction first
-    new_position = [position[0] + direction[0], position[1] + direction[1]]
-    while fences.include?(new_position)
-        fences.delete(new_position)
-        new_position = [new_position[0] + direction[0], new_position[1] + direction[1]]
-    end
-
-    # Then the other direction
-    new_position = [position[0] - direction[0], position[1] - direction[1]]
-    while fences.include?(new_position)
-        fences.delete(new_position)
-        new_position = [new_position[0] - direction[0], new_position[1] - direction[1]]
-    end
-end
-
-def sides(region, direction)
-    marked = Set.new
-    region.each do |x, y|
-        neighbour_x = x + direction[0]
-        neighbour_y = y + direction[1]
-
-        marked << [neighbour_x, neighbour_y] unless region.include?([neighbour_x, neighbour_y])
-    end
-    
-    result = 0
-    orthogonal_direction = [-direction[1], direction[0]]
-    while !marked.empty?
-        position = marked.first
-        result += 1
-        eliminate_side(marked, position, orthogonal_direction)
-    end
-    result
+    # Then count the number of uninterrupted line segments this gives. We do this by counting "endings" of the
+    # fence segments, i.e., those cells that do not have a neighbour that is also a fence cell.
+    fences.count { |x, y| !fences.include?([x - direction[1], y + direction[0]]) }
 end
 
 def find_sides_for_region(map, region)
-    horizontal_below_positions = sides(region, [0, 1])
-    horizontal_above_positions = sides(region, [0, -1])
-
-    vertical_left_of_positions = sides(region, [-1, 0])
-    vertical_right_of_positions = sides(region, [1, 0])
-
-    horizontal_below_positions + horizontal_above_positions + vertical_left_of_positions + vertical_right_of_positions
+    [
+        [0, 1],
+        [0, -1],
+        [-1, 0],
+        [1, 0]
+    ].sum { |direction| number_of_sides_in_direction(region, direction) }
 end
 
+handled = Set.new
 part_1, part_2 = 0, 0
 map.each_with_index do |row, y|
     row.each_with_index do |col, x|
