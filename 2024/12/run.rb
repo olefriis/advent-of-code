@@ -31,7 +31,7 @@ def find_region(map, x, y)
     region
 end
 
-def find_perimeter(map, region)
+def perimeter(map, region)
     DIRECTIONS.sum do |direction|
         # "Shift" the region one step in the given direction, then subtract the region from that.
         # This will give all neighbouring cells to the region, so just count those.
@@ -39,7 +39,7 @@ def find_perimeter(map, region)
     end
 end
 
-def find_sides_for_region(map, region)
+def sides(map, region)
     DIRECTIONS.sum do |direction|
         # Start by "throwing fences" in the direction given. Avoid putting fences on top of the region itself.
         fences = region.map { |x, y| [x + direction[0], y + direction[1]] } - region.to_a
@@ -56,14 +56,11 @@ map.count.times do |y|
         next if handled.include?([x, y])
 
         region = find_region(map, x, y)
-        perimeter = find_perimeter(map, region)
-        sides = find_sides_for_region(map, region)
+        part_1 += region.count * perimeter(map, region)
+        part_2 += region.count * sides(map, region)
 
         # Ensure we won't handle more cells from the region we just looked at
         region.each { |p| handled << p }
-
-        part_1 += region.count * perimeter
-        part_2 += region.count * sides
     end
 end
 
