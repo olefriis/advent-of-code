@@ -1,5 +1,20 @@
 chunks = File.read('13/input').split("\n\n")
 
+def solve_1(a_x, a_y, b_x, b_y, prize_x, prize_y)
+    possibilities = []
+    100.times do |a_times|
+        100.times do |b_times|
+            cost = a_times * 3 + b_times
+            x, y = a_x * a_times + b_x * b_times, a_y * a_times + b_y * b_times
+
+            if x == prize_x && y == prize_y
+                possibilities << cost
+            end
+        end
+    end
+    possibilities.min || 0
+end
+
 def which_side?(v_x, v_y, destination_x, destination_y)
     dot = v_x * -destination_y + v_y * destination_x
     if dot < 0
@@ -27,13 +42,7 @@ def fits?(a_x, a_y, b_x, b_y, prize_x, prize_y, a_times)
     prize_y -= a_y * a_times
 
     b_times = prize_x / b_x
-    if prize_x == b_x * b_times && prize_y == b_y * b_times
-        #puts "Works with #{a_times} and #{b_times}"
-        b_times
-    else
-        #puts "No workee"
-        nil
-    end
+    prize_x == b_x * b_times && prize_y == b_y * b_times ? b_times : nil
 end
 
 def solve_2(a_x, a_y, b_x, b_y, prize_x, prize_y)
@@ -48,7 +57,7 @@ def solve_2(a_x, a_y, b_x, b_y, prize_x, prize_y)
     initial_overshoot_left = overshoot_by_multiplying?(a_x, a_y, b_x, b_y, prize_x, prize_y, 0)
     initial_overshoot_right = overshoot_by_multiplying?(a_x, a_y, b_x, b_y, prize_x, prize_y, 10000000000000)
     if initial_overshoot_left == initial_overshoot_right
-        puts "Same results"
+        #puts "Same results"
         return 0
     end
     raise "Huh, left is 0" if initial_overshoot_left == 0
@@ -70,11 +79,9 @@ def solve_2(a_x, a_y, b_x, b_y, prize_x, prize_y)
         elsif middle_overshoot == right_overshoot
             right = middle
         else
-            #puts "Got middle: #{middle} - #{middle_overshoot}"
             solution = middle
         end
     end
-    #puts "Solution: #{solution}, left: #{left}, right: #{right}"
 
     if solution
         a_times = solution
@@ -95,9 +102,8 @@ def solve_2(a_x, a_y, b_x, b_y, prize_x, prize_y)
     0
 end
 
-part_2 = 0
+part_1, part_2 = 0, 0
 machines = chunks.each_with_index.map do |chunk, i|
-    puts "Machine #{i}"
     lines = chunk.lines.map(&:strip)
     lines[0] =~ /Button A: X(.*), Y(.*)/ or raise "Could not parse line"
     a_x, a_y = $1.to_i, $2.to_i
@@ -106,9 +112,11 @@ machines = chunks.each_with_index.map do |chunk, i|
     lines[2] =~ /Prize: X=(.*), Y=(.*)/ or raise "Could not parse line"
     prize_x, prize_y = $1.to_i, $2.to_i
 
+    part_1 += solve_1(a_x, a_y, b_x, b_y, prize_x, prize_y)
     part_2 += solve_2(a_x, a_y, b_x, b_y, prize_x, prize_y)
 
     [[a_x, a_y], [b_x, b_y], [prize_x, prize_y]]
 end
 
-puts part_2
+puts "Part 1: #{part_1}"
+puts "Part 2: #{part_2}"
