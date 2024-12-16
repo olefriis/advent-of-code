@@ -1,137 +1,90 @@
 map = File.readlines('16/input').map(&:strip).map(&:chars)
 
-r_x, r_y, e_x, e_y = 0, 0, 0, 0
+Node = Struct.new(:position, :direction)
+
+DIRECTIONS = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1]
+]
+
+connections = {}
+unvisited = Set.new
+distances = {}
+coming_from = {}
+end_nodes = []
+
 map.each_with_index do |row, y|
     row.each_with_index do |col, x|
-        r_x, r_y = x, y if col == 'S'
-        e_x, e_y = x, y if col == 'E'
+        next if col == '#'
+        nodes = DIRECTIONS.map { |d| Node.new([x, y], d) }
+        nodes.each do |node|
+            unvisited << node
+            distances[node] = 10000000 # Very large
+            coming_from[node] = []
+        end
+
+        if col == 'S'
+            distances[nodes[0]] = 0
+        end
+        if col == 'E'
+            end_nodes = nodes
+        end
     end
 end
 
-EAST = [1, 0]
+while !unvisited.empty?
+    puts unvisited.count
+    current_node = unvisited.min_by { |node| distances[node] } # We really need a speedy priority queue here...
+    current_distance = distances[current_node]
+    position = current_node.position
+    direction = current_node.direction
+    unvisited.delete(current_node)
 
-require 'pry'
-def calculate_part_2(map, positions, coming_from, part_1)
-    parts_of_good_path = Set.new
+    potential_connections = []
 
-    positions.each do |position|
-        parts_of_good_path << position[0]
-        last_positions = Set.new
-        last_positions << position
-        i = part_1
-        while i > 0
-            i -= 1
-            new_last_positions = Set.new
-    
-            last_positions.each do |pos|
-                was_here = coming_from[i][pos]
-                was_here.each do |was_pos|
-                    new_last_positions << was_pos
-                    parts_of_good_path << was_pos[0]
-                end
-            end
-    
-            last_positions = new_last_positions
+    # We can continue our path
+    potential_connections << [current_distance + 1, Node.new([position[0] + direction[0], position[1] + direction[1]], direction)]
+
+    # We can turn left
+    rotated_left = [direction[1], -direction[0]]
+    potential_connections << [current_distance + 1000, Node.new(position, rotated_left)]
+
+    # We can turn right
+    rotated_right = [-direction[1], direction[0]]
+    potential_connections << [current_distance + 1000, Node.new(position, rotated_right)]
+
+    potential_connections.each do |distance, node|
+        next unless unvisited.include?(node)
+
+        if distances[node] > distance
+            distances[node] = distance
+            coming_from[node] = [current_node]
+        elsif distances[node] == distance
+            coming_from[node] << current_node
         end
-    end
-
-    #debug(map, parts_of_good_path)
-
-    puts "Part 2: #{parts_of_good_path.count}"
-end
-
-def debug(map, good_path)
-    map.each_with_index do |row, y|
-        line = ''
-        row.each_with_index do |col, x|
-            if good_path.include?([x, y])
-                line << 'O'
-            else
-                line << map[y][x]
-            end
-        end
-        puts line
     end
 end
 
-coming_from = {}
-seen = Set.new
-has_rotated_here = Set.new
-part_1 = 0
-edge = Set.new
-edge << [[r_x, r_y], 0, EAST]
-has_rotated_here = Set.new
-part_1_solutions = []
-until edge.empty?
-    puts part_1
-    new_edge = Set.new
-    new_rotations = Set.new
-
-    edge.each do |previous|
-        pos, wait, direction = *previous
-        if wait == 0 && pos[0] == e_x && pos[1] == e_y
-            part_1_solutions << previous
-            coming_from[part_1][previous] ||= Set.new
-            coming_from[part_1][previous] << previous
-        end
-
-        coming_from[part_1] ||= {}
-
-        if wait > 0
-            new_position = [pos, wait - 1, direction]
-            new_edge << new_position
-            coming_from[part_1][new_position] ||= Set.new
-            coming_from[part_1][new_position] << previous
-        else
-            # Try to rotate in either direction
-            rotated_left = [direction[1], -direction[0]]
-            rotated_right = [-direction[1], direction[0]]
-
-            if !has_rotated_here.include?([pos, direction, rotated_left])
-                new_rotations << [pos, direction, rotated_left]
-                new_position = [pos, 999, rotated_left]
-                if !seen.include?(new_position)
-                    new_edge << new_position
-                    coming_from[part_1][new_position] ||= Set.new
-                    coming_from[part_1][new_position] << previous
-                    seen << new_position
-                end
-            end
-            if !has_rotated_here.include?([pos, direction, rotated_right])
-                new_rotations << [pos, direction, rotated_right]
-                new_position = [pos, 999, rotated_right]
-                if !seen.include?(new_position)
-                    new_edge << new_position
-                    coming_from[part_1][new_position] ||= Set.new
-                    coming_from[part_1][new_position] << previous
-                    seen << new_position
-                end
-            end
-
-            # Try to walk
-            new_x, new_y = pos[0] + direction[0], pos[1] + direction[1]
-            new_position = [[new_x, new_y], 0, direction]
-            if map[new_y][new_x] != '#' && !seen.include?(new_position)
-                new_edge << new_position
-                coming_from[part_1][new_position] ||= Set.new
-                coming_from[part_1][new_position] << previous
-                seen << new_position
-            end
-        end
-    end
-
-    if !part_1_solutions.empty?
-        puts "Part 1: #{part_1}"
-        calculate_part_2(map, part_1_solutions, coming_from, part_1)
-        exit
-    end
-
-    new_rotations.each do |e|
-        has_rotated_here << e
-    end
-
-    edge = new_edge
-    part_1 += 1
-end
-
+part_1 = end_nodes.map { |node| distances[node] }.min
 puts "Part 1: #{part_1}"
+
+nodes = end_nodes.filter { |node| distances[node] == part_1 }
+part_of_path = Set.new
+part_of_path << nodes[0].position
+while !nodes.empty?
+    new_nodes = Set.new
+
+    nodes.each do |node|
+        coming_from[node].each do |coming_from_node|
+            new_nodes << coming_from_node
+        end
+    end
+    new_nodes.each do |node|
+        part_of_path << node.position
+    end
+
+    nodes = new_nodes
+end
+puts "Part 2: #{part_of_path.count}"
