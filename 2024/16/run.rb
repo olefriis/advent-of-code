@@ -15,6 +15,11 @@ distances = {}
 coming_from = {}
 end_nodes = []
 
+# We don't have a real priority queue, so "popping" the unvisited node with the shortest distance will be
+# expensive. As a hack, keep a set of only the unvisited that have a distance. This set is much smaller than
+# the whole unvisited set, so it speeds up things a bit. Still not perfect though.
+unvisited_with_distance = Set.new
+
 map.each_with_index do |row, y|
     row.each_with_index do |col, x|
         next if col == '#'
@@ -27,6 +32,7 @@ map.each_with_index do |row, y|
 
         if col == 'S'
             distances[nodes[0]] = 0
+            unvisited_with_distance << nodes[0]
         end
         if col == 'E'
             end_nodes = nodes
@@ -35,12 +41,12 @@ map.each_with_index do |row, y|
 end
 
 while !unvisited.empty?
-    puts unvisited.count
-    current_node = unvisited.min_by { |node| distances[node] } # We really need a speedy priority queue here...
+    current_node = unvisited_with_distance.min_by { |node| distances[node] }
     current_distance = distances[current_node]
     position = current_node.position
     direction = current_node.direction
     unvisited.delete(current_node)
+    unvisited_with_distance.delete(current_node)
 
     potential_connections = []
 
@@ -61,8 +67,10 @@ while !unvisited.empty?
         if distances[node] > distance
             distances[node] = distance
             coming_from[node] = [current_node]
+            unvisited_with_distance << node
         elsif distances[node] == distance
             coming_from[node] << current_node
+            unvisited_with_distance << node
         end
     end
 end
