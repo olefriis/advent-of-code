@@ -11,90 +11,66 @@ end
 instructions = program.split(',').map(&:to_i)
 
 def run(registers, instructions)
-    registers = registers.clone
-    output = []
-    pc = 0
-    while pc < instructions.length
-        inst = instructions[pc]
-        literal_operand = instructions[pc + 1]
-        combo_operand = literal_operand
-        if literal_operand == 4
-            combo_operand = registers[0]
-        elsif literal_operand == 5
-            combo_operand = registers[1]
-        elsif literal_operand == 6
-            combo_operand = registers[2]
-        end
+    registers, output, pc = registers.clone, [], 0
 
-        if inst == 0 # adv
-            registers[0] = (registers[0] / (2 ** combo_operand)).to_i
-        elsif inst == 1 # bxl
+    while pc < instructions.length
+        literal_operand = instructions[pc + 1]
+        combo_operand = {
+            4 => registers[0],
+            5 => registers[1],
+            6 => registers[2]
+        }[literal_operand] || literal_operand
+
+        case instructions[pc]
+        when 0 # adv
+            registers[0] = registers[0] / 2 ** combo_operand
+        when 1 # bxl
             registers[1] = registers[1] ^ literal_operand
-        elsif inst == 2 # bst
+        when 2 # bst
             registers[1] = combo_operand % 8
-        elsif inst == 3 # jnz
-            if registers[0] != 0
-                pc = literal_operand - 2
-            end
-        elsif inst == 4 # bxc
+        when 3 # jnz
+            pc = literal_operand - 2 if registers[0] != 0
+        when 4 # bxc
             registers[1] = registers[1] ^ registers[2]
-        elsif inst == 5 # out
+        when 5 # out
             output << (combo_operand % 8)
-        elsif inst == 6 # bdv
-            registers[1] = (registers[0] / (2 ** combo_operand)).to_i
-        elsif inst == 7 # cdv
-            registers[2] = (registers[0] / (2 ** combo_operand)).to_i
+        when 6 # bdv
+            registers[1] = registers[0] / 2 ** combo_operand
+        when 7 # cdv
+            registers[2] = registers[0] / 2 ** combo_operand
         end
         pc += 2
     end
+
     output
 end
 
 puts "Part 1: #{run(registers, instructions).join(',')}"
 
-
-def to_input(working)
+def to_input(three_bit_chunks)
     result = 0
-    working.each do |w|
-        result *= 8
-        result += w
-    end
+    three_bit_chunks.each { |n| result = result * 8 + n }
     result
 end
 
-def to_input_2(a)
-    result = 0
-    a.each do |w|
-        result *= 2
-        result += w
-    end
-    result
-end
-
-working = []
-all_working = [[]]
-
-(instructions.count - 1).downto(0) do |index|
-    new_all_working = []
-    all_working.each do |working|
-        working = working.clone
-        working << 0
+working_inputs = [[]]
+instructions.count.times do
+    next_working_inputs = []
+    working_inputs.each do |working|
         8.times do |i|
-            working[-1] = i
-            registers[0] = to_input(working)
+            attempt = working + [i]
+            registers[0] = to_input(attempt)
             output = run(registers, instructions)
-            if output == instructions[(instructions.count - output.count)..]
-                new_all_working << working.clone
-            end
+
+            next_working_inputs << attempt if output == instructions[-output.count..]
         end
     end
-    all_working = new_all_working
+    working_inputs = next_working_inputs
 end
 
-part_2 = all_working.select do |working|
+part_2 = working_inputs.select do |working|
     registers[0] = to_input(working)
-    output = run(registers, instructions)
-    output == instructions
+    run(registers, instructions) == instructions
 end.map { |working| to_input(working) }.min
 
 puts "Part 2: #{part_2}"
