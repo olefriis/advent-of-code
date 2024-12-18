@@ -1,12 +1,9 @@
 coordinates = File.readlines('18/input').map(&:strip)
 
-WIDTH = 7
-HEIGHT = 7
-
 WIDTH = 71
 HEIGHT = 71
-map = {}
 
+map = {}
 coordinates[0...1024].each do |coordinate|
     x, y = coordinate.split(',').map(&:to_i)
     map[[x, y]] = true
@@ -57,12 +54,7 @@ def solvable?(map)
         iterations += 1
     end
     
-    if positions.empty?
-        return false
-    else
-        puts "Done in #{iterations} steps"
-        return true
-    end
+    !positions.empty?
 end
 
 positions = Set.new
@@ -70,7 +62,6 @@ positions << [0, 0]
 iterations = 0
 seen = Set.new
 while !positions.include?([HEIGHT-1, WIDTH-1])
-    #puts "Iteration #{iterations}: #{positions}"
     new_positions = Set.new
     positions.each do |x, y|
         neighbours(x, y).each do |n_x, n_y|
@@ -82,7 +73,6 @@ while !positions.include?([HEIGHT-1, WIDTH-1])
     positions = new_positions
     iterations += 1
 end
-
 puts "Part 1: #{iterations}"
 
 coordinates.each do |coordinate|
