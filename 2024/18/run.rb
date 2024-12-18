@@ -1,28 +1,7 @@
-coordinates = File.readlines('18/input').map(&:strip)
+coordinates = File.readlines('18/input').map(&:strip).map { |line| line.split(',').map(&:to_i) }
 
 WIDTH = 71
 HEIGHT = 71
-
-map = {}
-coordinates[0...1024].each do |coordinate|
-    x, y = coordinate.split(',').map(&:to_i)
-    map[[x, y]] = true
-end
-
-def debug(map)
-    HEIGHT.times do |y|
-        line = ''
-        WIDTH.times do |x|
-            if map[[x, y]]
-                line << '#'
-            else
-                line << '.'
-            end
-        end
-        puts line
-    end
-end
-
 
 def neighbours(x, y)
     result = []
@@ -33,53 +12,36 @@ def neighbours(x, y)
     result
 end
 
-debug(map)
-
-def solvable?(map)
+def solve(map)
     positions = Set.new
     positions << [0, 0]
     iterations = 0
     seen = Set.new
-    while !positions.empty? && !positions.include?([HEIGHT-1, WIDTH-1])
-        #puts "Iteration #{iterations}: #{positions}"
+    until positions.empty?
         new_positions = Set.new
         positions.each do |x, y|
             neighbours(x, y).each do |n_x, n_y|
-                next if map[[n_x, n_y]]
-                new_positions << [n_x, n_y] unless seen.include?([n_x, n_y])
+                next if map[[n_x, n_y]] || seen.include?([n_x, n_y])
+                new_positions << [n_x, n_y]
                 seen << [n_x, n_y]
             end
         end
         positions = new_positions
         iterations += 1
+        return iterations if positions.include?([HEIGHT-1, WIDTH-1])
     end
     
-    !positions.empty?
+    nil
 end
 
-positions = Set.new
-positions << [0, 0]
-iterations = 0
-seen = Set.new
-while !positions.include?([HEIGHT-1, WIDTH-1])
-    new_positions = Set.new
-    positions.each do |x, y|
-        neighbours(x, y).each do |n_x, n_y|
-            next if map[[n_x, n_y]]
-            new_positions << [n_x, n_y] unless seen.include?([n_x, n_y])
-            seen << [n_x, n_y]
-        end
-    end
-    positions = new_positions
-    iterations += 1
-end
-puts "Part 1: #{iterations}"
-
-coordinates.each do |coordinate|
-    x, y = coordinate.split(',').map(&:to_i)
+map = {}
+coordinates[0...1024].each do |x, y|
     map[[x, y]] = true
-    if !solvable?(map)
-        puts "Part 2: #{x},#{y}"
-        break
-    end
 end
+puts "Part 1: #{solve(map)}"
+
+part_2 = coordinates[1024..].find do |x, y|
+    map[[x, y]] = true
+    !solve(map)
+end
+puts "Part 2: #{part_2[0]},#{part_2[1]}"
