@@ -1,5 +1,4 @@
 chunks = File.read('17/input').split("\n\n")
-
 state, program = chunks[0], chunks[1].split(' ').last
 
 registers = [0, 0, 0]
@@ -23,7 +22,7 @@ def run(registers, instructions)
 
         case instructions[pc]
         when 0 # adv
-            registers[0] = registers[0] / 2 ** combo_operand
+            registers[0] = registers[0] >> combo_operand
         when 1 # bxl
             registers[1] = registers[1] ^ literal_operand
         when 2 # bst
@@ -35,9 +34,9 @@ def run(registers, instructions)
         when 5 # out
             output << (combo_operand % 8)
         when 6 # bdv
-            registers[1] = registers[0] / 2 ** combo_operand
+            registers[1] = registers[0] >> combo_operand
         when 7 # cdv
-            registers[2] = registers[0] / 2 ** combo_operand
+            registers[2] = registers[0] >> combo_operand
         end
         pc += 2
     end
@@ -49,7 +48,7 @@ puts "Part 1: #{run(registers, instructions).join(',')}"
 
 def to_input(three_bit_chunks)
     result = 0
-    three_bit_chunks.each { |n| result = result * 8 + n }
+    three_bit_chunks.each { |n| result = (result << 3) + n }
     result
 end
 
@@ -62,7 +61,7 @@ instructions.count.times do
             registers[0] = to_input(attempt)
             output = run(registers, instructions)
 
-            next_working_inputs << attempt if output == instructions[-output.count..]
+            next_working_inputs << attempt if output == instructions[-attempt.count..]
         end
     end
     working_inputs = next_working_inputs
