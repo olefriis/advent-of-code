@@ -59,19 +59,14 @@ original_path = find_path(map, start, destination)
 savings_map = Hash.new(0)
 
 part_1, part_2 = 0, 0
-cheat_length = 20
 original_path.each_with_index do |cheat_start, start_idx|
     puts start_idx if start_idx % 100 == 0
     (start_idx+1).upto(original_path.count-1) do |end_idx|
         cheat_start, cheat_end = original_path[start_idx], original_path[end_idx]
         distance = manhattan_distance(cheat_start, cheat_end)
-        if distance <= 20
-            savings = solve(original_path, start_idx, end_idx)
-            if savings >= 100
-                part_2 += 1
-                part_1 += 1 if distance <= 2
-            end
-        end
+        savings = solve(original_path, start_idx, end_idx)
+        part_1 += 1 if distance <= 2 && savings >= 100
+        part_2 += 1 if distance <= 20 && savings >= 100
     end
 end
 
