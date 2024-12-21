@@ -32,30 +32,17 @@ def valid?(layout, x, y, directions)
 end
 
 def combinations(from, to, layout)
-    start_x, start_y = *position_for(layout, from)
+    x, y = *position_for(layout, from)
     destination_x, destination_y = *position_for(layout, to)
 
-    x, y = start_x, start_y
+    moves = [
+        *(['>'] * [0, destination_x - x].max),
+        *(['<'] * [0, x - destination_x].max),
+        *(['v'] * [0, destination_y - y].max),
+        *(['^'] * [0, y - destination_y].max)
+    ]
 
-    moves = []
-    while x < destination_x
-        moves << '>'
-        x += 1
-    end
-    while x > destination_x
-        moves << '<'
-        x -= 1
-    end
-    while y < destination_y
-        moves << 'v'
-        y += 1
-    end
-    while y > destination_y
-        moves << '^'
-        y -= 1
-    end
-
-    moves.permutation.to_a.uniq.select { |m| valid?(layout, start_x, start_y, m) }.map { |m| m + ['A'] }
+    [moves + ['A'], moves.reverse + ['A']].select { |m| valid?(layout, x, y, m) }
 end
 
 COST_CACHE = {}
