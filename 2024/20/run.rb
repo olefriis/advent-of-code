@@ -11,36 +11,25 @@ map.each_with_index do |row, y|
     end
 end
 
-def neighbours(map, pos)
-    result = []
-    x, y = *pos
-    result << [x-1, y] if x > 0
-    result << [x+1, y] if x < map[0].count - 1
-    result << [x, y-1] if y > 0
-    result << [x, y+1] if y < map.count - 1
-    result
-end
-
 def find_path(map, start, destination)
-    positions = Set.new([start])
-    seen = Set.new([start])
-    result = [start]
-    loop do
-        raise "No path!" if positions.empty?
-
-        new_positions = Set.new
-        positions.each do |pos|
-            neighbours(map, pos).each do |n_x, n_y|
-                next if map[n_y][n_x] == '#' || seen.include?([n_x, n_y])
-                result << [n_x, n_y]
-                new_positions << [n_x, n_y]
-                seen << [n_x, n_y]
-            end
-        end
-        positions = new_positions
-        raise "Too many positions - we expect only a single possible path" if positions.count > 1
-        return result if positions.include?(destination)
+    coming_from = start
+    path = [start]
+    position = start
+    until position == destination do
+        x, y = *position
+        neighbours = [
+            [x-1, y],
+            [x+1, y],
+            [x, y-1],
+            [x, y+1]
+        ]
+        possibilities = (neighbours - [coming_from]).select { |x, y| map[y][x] != '#' }
+        raise "More than one possibility!" if possibilities.count > 1
+        coming_from = position
+        position = possibilities[0]
+        path << position
     end
+    path
 end
 
 def manhattan_distance(p1, p2)
@@ -50,9 +39,7 @@ end
 def solve(original_path, start_index, end_index)
     cheat_start, cheat_end = original_path[start_index], original_path[end_index]
 
-    would_have_normally_walked = end_index - start_index
-    will_now_walk = manhattan_distance(cheat_start, cheat_end)
-    would_have_normally_walked - will_now_walk
+    end_index - start_index - manhattan_distance(cheat_start, cheat_end)
 end
 
 original_path = find_path(map, start, destination)
