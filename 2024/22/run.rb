@@ -1,16 +1,9 @@
 input = File.readlines('22/input').map(&:strip)
 
 def next_secret(a)
-    b = a * 64
-    a = (a ^ b) % 16777216
-
-    b = a / 32
-    a = (a ^ b) % 16777216
-
-    b = a * 2048
-    a = (a ^ b) % 16777216
-
-    a
+    a = (a ^ (a * 64)) % 16777216
+    a = (a ^ (a / 32)) % 16777216
+    (a ^ (a * 2048)) % 16777216
 end
 
 sequence_values = Hash.new(0)
@@ -33,5 +26,5 @@ input.each do |line|
 end
 puts "Part 1: #{part_1}"
 
-best_sequence = sequence_values.max_by(&:last)
-puts "Part 2: #{best_sequence.last}"
+part_2 = sequence_values.values.max
+puts "Part 2: #{part_2}"
