@@ -16,7 +16,7 @@ three_node_groups = connections.keys.flat_map do |node_1|
         end
     end
 end.uniq
-part_1 = three_node_groups.count { |group| group.any? { _1.include?('t') } }
+part_1 = three_node_groups.count { |group| group.any? { _1.start_with?('t') } }
 puts "Part 1: #{part_1}"
 
 def largest_interconnected_group(connections, node)
