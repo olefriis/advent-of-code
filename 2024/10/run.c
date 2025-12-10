@@ -105,6 +105,8 @@ int part_2_score(int x, int y) {
 }
 
 int main(int argc, char *argv[]) {
+    // Default to "10/input" for consistency with Ruby version when run from 2024 directory
+    // Can be overridden with command-line argument for testing or different locations
     const char *filename = "10/input";
     if (argc > 1) {
         filename = argv[1];
