@@ -2,4 +2,7 @@
 input
 test_input
 
+# Compiled binaries
+run
+
 /2019/target
