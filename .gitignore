@@ -5,4 +5,7 @@ test_input
 # Compiled binaries
 run
 
+# CodeQL artifacts
+_codeql_detected_source_root
+
 /2019/target
