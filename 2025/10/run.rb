@@ -1,13 +1,13 @@
 lines = File.readlines('10/input').map(&:strip)
 
-machine = Struct.new(:expected_lights, :expected_joltage, :buttons)
+Machine = Struct.new(:expected_lights, :expected_joltage, :buttons)
 machines = []
 lines.each do |line|
   parts = line.split(' ')
   lights = parts[0][1..-2].chars.map {|c| c == '#' ? 1 : 0}
   buttons = parts[1..-2].map {|b| b[1..-2].split(',').map(&:to_i)}
   joltage = parts[-1][1..-2].split(',').map(&:to_i)
-  machines << machine.new(lights, joltage, buttons)
+  machines << Machine.new(lights, joltage, buttons)
 end
 
 def generate_patterns(buttons, number_of_joltages)
