@@ -1,14 +1,12 @@
 lines = File.readlines('03/input').map(&:strip)
 
 def biggest_joltage(joltages, number_of_batteries)
-  result = 0
-  number_of_batteries.downto(1) do |i|
-    biggest_valid_joltage = joltages[0..-i].max
-    biggest_joltage_index = joltages.index(biggest_valid_joltage)
-    result = result * 10 + biggest_valid_joltage
-    joltages = joltages[biggest_joltage_index + 1..-1]
-  end
-  result
+  return 0 if number_of_batteries == 0
+
+  biggest_valid_joltage = joltages[0..-number_of_batteries].max
+  biggest_joltage_index = joltages.index(biggest_valid_joltage)
+  10**(number_of_batteries - 1) * biggest_valid_joltage +
+    biggest_joltage(joltages[biggest_joltage_index + 1..], number_of_batteries - 1)
 end
 
 part_1, part_2 = 0, 0
