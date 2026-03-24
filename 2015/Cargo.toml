@@ -23,3 +23,11 @@ path = "./2/run_1.rs"
 [[bin]]
 name = "2-2"
 path = "./2/run_2.rs"
+
+[[bin]]
+name = "3-1"
+path = "./3/run_1.rs"
+
+[[bin]]
+name = "3-2"
+path = "./3/run_2.rs"
